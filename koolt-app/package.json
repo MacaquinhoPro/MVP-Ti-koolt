@@ -1,0 +1,31 @@
+{
+  "name": "koolt-operacion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP del sistema de ventas, inventario y compras de KOOLT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push --skip-generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma db push --skip-generate --force-reset && tsx prisma/seed.ts",
+    "setup": "prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.1",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "prisma": "^6.16.1",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}

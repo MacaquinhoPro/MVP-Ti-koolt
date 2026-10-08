@@ -1,0 +1,1646 @@
+<title>KOOLT Operación</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Chivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ─── Tokens ───────────────────────────────────────────────────────────── */
+:root{
+  color-scheme: light;
+  --ground:#FBFAFC; --surface:#FFFFFF; --surface-2:#F3F0F7; --surface-3:#E9E3F1;
+  --ink:#1C1420; --ink-2:#635A6E; --ink-3:#8C8398;
+  --line:#E5DFEC; --line-2:#CFC6DA;
+  --accent:#C2185B; --accent-ink:#8E1144; --accent-soft:#FBE9F0; --on-accent:#FFFFFF;
+  --s1:#C2185B; --s2:#2F5FD0; --s3:#D98324; --s4:#09A08C;
+  --good:#1B7A4B; --good-soft:#E3F3E9;
+  --warn:#9A6B00; --warn-soft:#FAF0D9;
+  --crit:#B4291B; --crit-soft:#FBE7E3;
+  --grid:#EFEAF4;
+  --shadow:0 1px 2px rgba(28,20,32,.05), 0 10px 28px -20px rgba(28,20,32,.22);
+  --shadow-lift:0 2px 4px rgba(28,20,32,.06), 0 18px 40px -24px rgba(28,20,32,.3);
+  --r:10px; --r-lg:16px;
+  --fd:'Bricolage Grotesque','Chivo',system-ui,sans-serif;
+  --fb:'Chivo',system-ui,-apple-system,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;
+}
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:14.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{font-family:var(--fd);margin:0;text-wrap:balance;letter-spacing:-.015em;line-height:1.18}
+p{margin:0}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:0;background:none}
+table{border-collapse:collapse;width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.num{font-family:var(--fm);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--fb);font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-2)}
+.tiny{font-size:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* ─── Shell ────────────────────────────────────────────────────────────── */
+.app{display:grid;grid-template-columns:234px minmax(0,1fr);min-height:100vh}
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:20px 14px 28px;
+  display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+.brand-mk{width:34px;height:34px;flex:0 0 34px}
+.brand-tx strong{display:block;font-family:var(--fd);font-weight:700;font-size:17px;letter-spacing:-.02em}
+.brand-tx span{display:block;font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-g{margin:10px 0 4px;padding:0 8px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--ink-2);
+  font-weight:500;text-decoration:none;font-size:13.5px;transition:background .12s,color .12s}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.nav a[aria-current="page"] .ni{color:var(--accent)}
+.ni{width:17px;height:17px;flex:0 0 17px;color:var(--ink-3)}
+.nav-badge{margin-left:auto;font-family:var(--fm);font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:99px;
+  background:var(--crit-soft);color:var(--crit)}
+.rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:0 6px}
+.main{min-width:0;padding:26px 30px 70px;max-width:1240px}
+.topbar{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.topbar h1{font-size:25px;font-weight:600}
+.topbar .sub{color:var(--ink-2);font-size:13.5px;margin-top:3px;max-width:62ch}
+.topbar-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ─── Controls ─────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 13px;border-radius:9px;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--ink);font-weight:500;font-size:13.5px;
+  transition:background .12s,border-color .12s,transform .08s}
+.btn:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn-pri:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:var(--on-accent)}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:7px}
+.btn-gh{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn-gh:hover{background:var(--surface-2);color:var(--ink);border-color:transparent}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px}
+.seg button{padding:5px 11px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+input,select{font-family:var(--fb);font-size:13.5px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;width:100%}
+input[type=number]{font-family:var(--fm);font-variant-numeric:tabular-nums}
+label.fl{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:99px;font-size:11.5px;
+  font-weight:600;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.chip .dot{width:6px;height:6px;border-radius:99px;background:currentColor;flex:0 0 6px}
+.chip-ok{background:var(--good-soft);color:var(--good);border-color:transparent}
+.chip-warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip-crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.chip-ac{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+
+/* ─── Surfaces ─────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:15px 18px 0}
+.card-h h3{font-size:15.5px;font-weight:600}
+.card-h .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+.card-b{padding:14px 18px 18px}
+.plain{border:0;box-shadow:none;background:none}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sec-t{display:flex;align-items:baseline;gap:10px;margin:28px 0 12px}
+.sec-t h2{font-size:18px;font-weight:600}
+.sec-t .l{height:1px;background:var(--line);flex:1;margin-bottom:5px}
+
+/* ─── KPI tiles ────────────────────────────────────────────────────────── */
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px 12px;
+  display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font-family:var(--fd);font-weight:600;font-size:26px;letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums;line-height:1.05}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink-2);letter-spacing:0}
+.kpi .f{font-size:11.5px;color:var(--ink-2);display:flex;align-items:center;gap:5px}
+.kpi-ac{border-left:3px solid var(--accent)}
+
+/* ─── Tables ───────────────────────────────────────────────────────────── */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{font-size:13px;min-width:460px}
+table.t th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-3);padding:0 10px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+table.t td.n,table.t th.n{text-align:right;font-family:var(--fm);font-variant-numeric:tabular-nums;white-space:nowrap}
+table.t th.n{font-family:var(--fb)}
+table.t tbody tr:hover td{background:var(--surface-2)}
+table.t .em{font-weight:600}
+.data-t{font-size:12.5px}
+.data-t th,.data-t td{padding:5px 9px}
+
+/* ─── Charts ───────────────────────────────────────────────────────────── */
+.ch{position:relative}
+.ch svg{display:block;width:100%;height:auto;max-width:100%;overflow:visible}
+.ch .ax{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.ch .axl{font-family:var(--fb);font-size:10.5px;fill:var(--ink-2);font-weight:500}
+.ch .gl{stroke:var(--grid);stroke-width:1}
+.ch .dl{font-family:var(--fm);font-size:11px;fill:var(--ink);font-variant-numeric:tabular-nums}
+.ch .hit{fill:transparent;cursor:crosshair}
+.tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-112%);z-index:5;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:8px;box-shadow:var(--shadow-lift);
+  padding:7px 10px;font-size:12px;white-space:nowrap;transition:opacity .09s}
+.tip.on{opacity:1}
+.tip b{font-family:var(--fm);font-variant-numeric:tabular-nums}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+/* ─── POS ──────────────────────────────────────────────────────────────── */
+.pos{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:18px;align-items:start}
+.pgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(146px,1fr))}
+.pbtn{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);padding:11px 12px;
+  text-align:left;display:flex;flex-direction:column;gap:3px;min-height:82px;transition:border-color .12s,box-shadow .12s,transform .08s}
+.pbtn:hover{border-color:var(--accent);box-shadow:var(--shadow-lift)}
+.pbtn:active{transform:scale(.985)}
+.pbtn .pn{font-weight:600;font-size:13.5px;line-height:1.25}
+.pbtn .pz{font-size:11px;color:var(--ink-3)}
+.pbtn .pp{margin-top:auto;font-family:var(--fm);font-size:13px;font-weight:500;color:var(--accent-ink)}
+.pbtn.falta{border-left:3px solid var(--warn)}
+.pbtn.falta .pz{color:var(--warn)}
+.tbtn{background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:6px 11px;
+  font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.tbtn:hover{border-color:var(--accent)}
+.tbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.tbtn[disabled]{opacity:.4;text-decoration:line-through}
+.tbtn .tp{font-family:var(--fm);font-size:11px;color:var(--ink-3)}
+/* receipt */
+.tick{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);
+  position:sticky;top:26px;overflow:hidden}
+.tick-h{padding:14px 16px 10px;border-bottom:1px dashed var(--line-2)}
+.tick-h .fol{font-family:var(--fm);font-size:11.5px;color:var(--ink-3);letter-spacing:.02em}
+.tick-l{font-family:var(--fm);font-size:12.5px;padding:10px 16px;display:flex;flex-direction:column;gap:7px;
+  max-height:min(42vh,340px);overflow-y:auto}
+.tl{display:grid;grid-template-columns:22px minmax(0,1fr) auto 26px;gap:7px;align-items:baseline}
+.tl .q{color:var(--ink-3)}
+.tl .d{overflow-wrap:anywhere;font-family:var(--fb);font-size:12.5px}
+.tl .d em{display:block;color:var(--ink-3);font-style:normal;font-size:11px}
+.tl .m{font-variant-numeric:tabular-nums}
+.tl .x{color:var(--ink-3);font-size:14px;line-height:1;text-align:right;padding:0 2px}
+.tl .x:hover{color:var(--crit)}
+.tick-tot{padding:11px 16px;border-top:1px dashed var(--line-2);background:var(--surface-2)}
+.tick-tot .tr{display:flex;justify-content:space-between;font-family:var(--fm);font-size:12.5px;color:var(--ink-2)}
+.tick-tot .tr.big{font-family:var(--fd);font-size:21px;font-weight:600;color:var(--ink);margin-top:5px;
+  font-variant-numeric:tabular-nums;align-items:baseline}
+.tick-f{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:12.5px}
+.timer{font-family:var(--fm);font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.timer b{color:var(--ink-2);font-weight:500}
+
+/* ─── Meters ───────────────────────────────────────────────────────────── */
+.meter{position:relative;height:7px;border-radius:99px;background:var(--surface-3);overflow:visible;min-width:92px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--s4)}
+.meter i.w{background:var(--s3)}
+.meter i.c{background:var(--crit)}
+.meter .mk{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink-3);border-radius:1px}
+.inv-r{display:grid;grid-template-columns:minmax(0,2.1fr) 92px 112px minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:11px 0;border-bottom:1px solid var(--grid)}
+.inv-r:last-child{border-bottom:0}
+.inv-r .nm{font-weight:500;font-size:13.5px}
+.inv-r .nm em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3)}
+
+/* ─── Diagrams / arch ──────────────────────────────────────────────────── */
+figure{margin:0}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow)}
+.fig .fw{overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:560px;height:auto;color:var(--ink-2)}
+.fig figcaption{margin-top:12px;font-size:12.5px;color:var(--ink-2);max-width:78ch}
+.fig figcaption b{color:var(--ink);font-weight:600}
+.d-box{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1}
+.d-box-ac{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.d-box-g{fill:none;stroke:var(--line-2);stroke-width:1;stroke-dasharray:4 4}
+.d-ent{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.d-ent-h{fill:var(--surface-3)}
+.d-t{font-family:var(--fb);font-size:12px;font-weight:600;fill:var(--ink)}
+.d-s{font-family:var(--fb);font-size:10.5px;fill:var(--ink-2)}
+.d-f{font-family:var(--fm);font-size:10px;fill:var(--ink-2)}
+.d-l{font-family:var(--fb);font-size:10.5px;fill:var(--ink-3);font-weight:500}
+.d-ln{stroke:currentColor;stroke-width:1.2;fill:none}
+.d-ln-ac{stroke:var(--accent);stroke-width:1.6;fill:none}
+.d-ln-d{stroke:currentColor;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+.d-ac{fill:var(--accent)}
+.adr{display:flex;flex-direction:column;gap:0}
+.adr li{list-style:none;padding:13px 0;border-bottom:1px solid var(--grid);display:grid;
+  grid-template-columns:62px minmax(0,1fr);gap:14px}
+.adr li:last-child{border-bottom:0}
+.adr .id{font-family:var(--fm);font-size:11.5px;font-weight:600;color:var(--accent-ink)}
+.adr h4{font-size:14px;font-weight:600;margin-bottom:3px}
+.adr p{font-size:12.5px;color:var(--ink-2)}
+.adr p+p{margin-top:4px}
+.adr .alt{color:var(--ink-3)}
+
+/* ─── Misc ─────────────────────────────────────────────────────────────── */
+.note{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;
+  font-size:12.5px;color:var(--ink-2);display:flex;gap:9px;align-items:flex-start}
+.note svg{flex:0 0 15px;width:15px;height:15px;margin-top:1px;color:var(--ink-3)}
+.note-ac{background:var(--accent-soft);border-color:transparent;color:var(--accent-ink)}
+.note-ac svg{color:var(--accent)}
+.ol{display:flex;flex-direction:column;gap:9px;padding-left:0;margin:0}
+.ol li{list-style:none;display:grid;grid-template-columns:20px minmax(0,1fr);gap:9px;font-size:13px;color:var(--ink-2)}
+.ol .n{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--accent-ink);
+  background:var(--accent-soft);border-radius:5px;text-align:center;height:19px;line-height:19px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:40;background:var(--ink);
+  color:var(--surface);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lift);
+  opacity:0;transition:opacity .16s,transform .16s;pointer-events:none;max-width:min(92vw,460px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:500}
+.sync .dot{width:6px;height:6px;border-radius:99px;background:var(--ink-3)}
+.sync.live .dot{background:var(--good);box-shadow:0 0 0 3px var(--good-soft)}
+.ck{display:flex;align-items:center;gap:9px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--grid)}
+.ck:last-child{border-bottom:0}
+.ck input{width:16px;height:16px;flex:0 0 16px;accent-color:var(--accent)}
+.mt-r{display:grid;grid-template-columns:minmax(0,1.5fr) 88px minmax(0,1fr) minmax(0,1fr) 104px;gap:12px;
+  align-items:center;padding:11px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.mt-r:last-child{border-bottom:0}
+.mt-r .oe{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--ink-3)}
+.mt-r .lab{font-weight:500}
+.mobile-nav{display:none}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ─── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width:1180px){
+  .pos{grid-template-columns:minmax(0,1fr) 300px}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .rail{display:none}
+  .mobile-nav{display:block;position:sticky;top:0;z-index:20;background:var(--surface);
+    border-bottom:1px solid var(--line);padding:10px 16px}
+  .mobile-nav .mn-top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .mobile-nav .mn-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .mobile-nav .mn-scroll::-webkit-scrollbar{display:none}
+  .mobile-nav .mn-scroll a{flex:0 0 auto;padding:6px 11px;border-radius:99px;font-size:12.5px;font-weight:500;
+    color:var(--ink-2);text-decoration:none;border:1px solid var(--line-2);white-space:nowrap}
+  .mobile-nav .mn-scroll a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .main{padding:20px 16px 72px}
+  .pos{grid-template-columns:minmax(0,1fr)}
+  .tick{position:static}
+  .g2,.g3{grid-template-columns:minmax(0,1fr)}
+  .inv-r{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .inv-r>*:nth-child(2),.inv-r>*:nth-child(3){grid-column:1}
+  .mt-r{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+  .mt-r>.oe{grid-row:1}
+}
+@media (max-width:560px){
+  .g4{grid-template-columns:minmax(0,1fr)}
+  .topbar h1{font-size:21px}
+  .pgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .adr li{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+
+<svg hidden aria-hidden="true" style="position:absolute;width:0;height:0">
+  <symbol id="i-pos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10M12 16v4M7 8h4"/></symbol>
+  <symbol id="i-inv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></symbol>
+  <symbol id="i-buy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.2 10.5a2 2 0 002 1.5h7.6a2 2 0 002-1.5L20 7H6"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8.5 14.5l2.5 2.5 4.5-4.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-cat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18.5" cy="18" r="2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-arch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 004 0"/></symbol>
+</svg>
+
+<div class="app">
+  <!-- Rail -->
+  <aside class="rail">
+    <div class="brand">
+      <svg class="brand-mk" viewBox="0 0 34 34" role="img" aria-label="KOOLT">
+        <rect width="34" height="34" rx="9" fill="var(--accent)"/>
+        <path d="M11 24.5c0-4.2 2.7-6.4 6-6.4s6 2.2 6 6.4" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        <path d="M10.4 15.6c1.6-1.5 3.1.5 4.7-1s3.1.5 4.7-1 3.1.5 4.7-1" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        <circle cx="17" cy="10.2" r="1.7" fill="#fff"/>
+      </svg>
+      <div class="brand-tx"><strong>KOOLT</strong><span>Cajicá · sede única</span></div>
+    </div>
+
+    <nav class="nav" aria-label="Módulos">
+      <div class="nav-g eyebrow">Operación diaria</div>
+      <a href="#pos" data-v="pos"><svg class="ni"><use href="#i-pos"/></svg> Venta</a>
+      <a href="#cierre" data-v="cierre"><svg class="ni"><use href="#i-close"/></svg> Cierre diario</a>
+      <div class="nav-g eyebrow" data-role="admin">Abastecimiento</div>
+      <a href="#inventario" data-v="inventario" data-role="admin"><svg class="ni"><use href="#i-inv"/></svg> Inventario <span class="nav-badge" id="nb-inv" hidden>0</span></a>
+      <a href="#compras" data-v="compras" data-role="admin"><svg class="ni"><use href="#i-buy"/></svg> Compras</a>
+      <div class="nav-g eyebrow" data-role="admin">Información</div>
+      <a href="#analitica" data-v="analitica" data-role="admin"><svg class="ni"><use href="#i-chart"/></svg> Analítica</a>
+      <a href="#metricas" data-v="metricas" data-role="admin"><svg class="ni"><use href="#i-target"/></svg> Métricas del piloto</a>
+      <div class="nav-g eyebrow" data-role="admin">Maestros</div>
+      <a href="#catalogo" data-v="catalogo" data-role="admin"><svg class="ni"><use href="#i-cat"/></svg> Catálogo y recetas</a>
+      
+    </nav>
+
+    <div class="rail-foot">
+      <div>
+        <label class="fl" for="sel-rol">Sesión</label>
+        <select id="sel-rol">
+          <option value="admin">Sebastián · administrador</option>
+          <option value="mostrador">Mostrador · turno</option>
+        </select>
+      </div>
+      <div class="sync" id="sync"><span class="dot"></span><span id="sync-tx">Solo este dispositivo</span></div>
+    </div>
+  </aside>
+
+  <!-- Mobile nav -->
+  <div class="mobile-nav">
+    <div class="mn-top">
+      <svg class="brand-mk" viewBox="0 0 34 34" aria-hidden="true" style="width:28px;height:28px;flex:0 0 28px">
+        <rect width="34" height="34" rx="9" fill="var(--accent)"/>
+        <path d="M11 24.5c0-4.2 2.7-6.4 6-6.4s6 2.2 6 6.4" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        <path d="M10.4 15.6c1.6-1.5 3.1.5 4.7-1s3.1.5 4.7-1 3.1.5 4.7-1" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        <circle cx="17" cy="10.2" r="1.7" fill="#fff"/>
+      </svg>
+      <strong style="font-family:var(--fd);font-size:16px">KOOLT</strong>
+      <select id="sel-rol-m" style="width:auto;margin-left:auto;font-size:12px;padding:5px 7px">
+        <option value="admin">Administrador</option>
+        <option value="mostrador">Mostrador</option>
+      </select>
+    </div>
+    <div class="mn-scroll" id="mn-scroll"></div>
+  </div>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow" id="tb-eye">Módulo</div>
+        <h1 id="tb-title">—</h1>
+        <p class="sub" id="tb-sub"></p>
+      </div>
+      <div class="topbar-r" id="tb-actions"></div>
+    </div>
+
+    <section id="v-pos" class="view" hidden></section>
+    <section id="v-cierre" class="view" hidden></section>
+    <section id="v-inventario" class="view" hidden></section>
+    <section id="v-compras" class="view" hidden></section>
+    <section id="v-analitica" class="view" hidden></section>
+    <section id="v-metricas" class="view" hidden></section>
+    <section id="v-catalogo" class="view" hidden></section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. CATÁLOGO — insumos, productos y recetas de KOOLT
+   Cantidades de receta en la unidad base del insumo (L, g, und).
+   ══════════════════════════════════════════════════════════════════════════ */
+const INSUMOS = [
+  {id:'leche',    n:'Leche entera',                 u:'L', emp:'caja de 16 L',   ec:16,   cost:78000,  lead:1, prov:'Lácteos Cajicá (local)', min:4.3,   s0:18.3, mg:2},
+  {id:'base-tmp', n:'Base de yogurt · temporada',   u:'L', emp:'garrafa de 10 L',ec:10,   cost:132000, lead:5, prov:'Yogurt Andino · Bogotá', min:23.8,   s0:104.8},
+  {id:'base-van', n:'Base de yogurt · vainilla',    u:'L', emp:'garrafa de 10 L',ec:10,   cost:126000, lead:5, prov:'Yogurt Andino · Bogotá', min:18.2,   s0:87.5},
+  {id:'pulpa',    n:'Pulpa de fruta para granizado',u:'L', emp:'bidón de 5 L',   ec:5,    cost:58000,  lead:5, prov:'Frutas del Valle · Bogotá', min:15, s0:77.9},
+  {id:'hielo',    n:'Hielo en escamas',             u:'kg',emp:'bolsa de 10 kg', ec:10,   cost:12000,  lead:1, prov:'Hielo Sabana (local)',   min:7.4,   s0:44.3, mg:3},
+
+  {id:'t-mora',   n:'Mora en trozos',               u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:32000, lead:5, prov:'Frutas del Valle · Bogotá', min:4250, s0:15320, top:1, por:52, pa:2500, ord:1},
+  {id:'t-fresa',  n:'Fresa en trozos',              u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:30000, lead:5, prov:'Frutas del Valle · Bogotá', min:3500, s0:9500, top:1, por:52, pa:2500, ord:2},
+  {id:'t-banano', n:'Banano en rodajas',            u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:16000,  lead:2, prov:'Plaza de Cajicá (local)',   min:750, s0:3340, top:1, por:48, pa:1800, ord:3, mg:3},
+  {id:'t-areq',   n:'Arequipe',                     u:'g', emp:'balde de 2 kg',  ec:2000, cost:62000, lead:5, prov:'Dulces El Trébol · Bogotá',min:2850, s0:13640, top:1, por:46, pa:2200, ord:4},
+  {id:'t-salsa',  n:'Salsa de mora',                u:'g', emp:'frasco de 1,5 kg',ec:1500,cost:46000, lead:5, prov:'Dulces El Trébol · Bogotá',min:1000, s0:5920, top:1, por:35, pa:2000, ord:5},
+  {id:'t-choco',  n:'Granillo de chocolate',        u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:42000, lead:5, prov:'Insumos Repostería · Bogotá',min:1850,s0:4060, top:1, por:34, pa:2000, ord:6},
+  {id:'t-galleta',n:'Galleta en trozos',            u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:38000, lead:5, prov:'Insumos Repostería · Bogotá',min:2200,s0:9620, top:1, por:40, pa:2200, ord:7},
+  {id:'t-brownie',n:'Brownie en cubos',             u:'g', emp:'bandeja de 1,2 kg',ec:1200,cost:54000,lead:5, prov:'Insumos Repostería · Bogotá',min:1700,s0:1480,  top:1, por:38, pa:2800, ord:8},
+  {id:'t-mani',   n:'Maní tostado',                 u:'g', emp:'bolsa de 1 kg',  ec:1000, cost:28000, lead:5, prov:'Insumos Repostería · Bogotá',min:500,s0:0,    top:1, por:28, pa:1800, ord:9},
+  {id:'t-chips',  n:'Chips de colores',             u:'g', emp:'bolsa de 800 g', ec:800,  cost:26000, lead:5, prov:'Insumos Repostería · Bogotá',min:900,s0:5060, top:1, por:25, pa:1500, ord:10},
+
+  {id:'vaso-8',   n:'Vaso de 8 oz',                 u:'und',emp:'paquete de 50',  ec:50,  cost:7800,  lead:5, prov:'Desechables Norte · Bogotá', min:110, s0:660},
+  {id:'vaso-12',  n:'Vaso de 12 oz',                u:'und',emp:'paquete de 50',  ec:50,  cost:9400,  lead:5, prov:'Desechables Norte · Bogotá', min:370, s0:1860},
+  {id:'vaso-16',  n:'Vaso de 16 oz',                u:'und',emp:'paquete de 50',  ec:50,  cost:11200, lead:5, prov:'Desechables Norte · Bogotá', min:50, s0:350},
+  {id:'cuchara',  n:'Cuchara plástica',             u:'und',emp:'paquete de 100', ec:100, cost:6200,  lead:5, prov:'Desechables Norte · Bogotá', min:380, s0:2140},
+  {id:'pitillo',  n:'Pitillo grueso',               u:'und',emp:'paquete de 100', ec:100, cost:5400,  lead:5, prov:'Desechables Norte · Bogotá', min:150, s0:900},
+  {id:'servilleta',n:'Servilleta',                  u:'und',emp:'paquete de 500', ec:500, cost:8600,  lead:5, prov:'Desechables Norte · Bogotá', min:530, s0:2130},
+  {id:'tapa',     n:'Tapa para vaso',               u:'und',emp:'paquete de 50',  ec:50,  cost:6800,  lead:5, prov:'Desechables Norte · Bogotá', min:150, s0:780}
+];
+const INS = Object.fromEntries(INSUMOS.map(function(i){return [i.id,i]}));
+const TOPPINGS = INSUMOS.filter(function(i){return i.top}).sort(function(a,b){return a.ord-b.ord});
+
+const LINEAS = ['Temporada','Vainilla','Mixto','Granizado'];
+const PRODUCTOS = [
+  {id:'p-t12', n:'Helado de temporada · mora', z:'12 oz', linea:'Temporada', precio:9500, tmp:1, w:.22,
+    r:[{i:'base-tmp',c:.12},{i:'leche',c:.06},{i:'vaso-12',c:1},{i:'cuchara',c:1},{i:'servilleta',c:1}]},
+  {id:'p-t8',  n:'Helado de temporada · mora', z:'8 oz',  linea:'Temporada', precio:7500, tmp:1, w:.12,
+    r:[{i:'base-tmp',c:.085},{i:'leche',c:.045},{i:'vaso-8',c:1},{i:'cuchara',c:1},{i:'servilleta',c:1}]},
+  {id:'p-v12', n:'Helado de vainilla',          z:'12 oz', linea:'Vainilla',  precio:9000, w:.16,
+    r:[{i:'base-van',c:.12},{i:'leche',c:.06},{i:'vaso-12',c:1},{i:'cuchara',c:1},{i:'servilleta',c:1}]},
+  {id:'p-v8',  n:'Helado de vainilla',          z:'8 oz',  linea:'Vainilla',  precio:7000, w:.08,
+    r:[{i:'base-van',c:.085},{i:'leche',c:.045},{i:'vaso-8',c:1},{i:'cuchara',c:1},{i:'servilleta',c:1}]},
+  {id:'p-m12', n:'Helado mixto',                z:'12 oz', linea:'Mixto',     precio:9800, w:.14,
+    r:[{i:'base-tmp',c:.06},{i:'base-van',c:.06},{i:'leche',c:.06},{i:'vaso-12',c:1},{i:'cuchara',c:1},{i:'servilleta',c:1}]},
+  {id:'p-g12', n:'Granizado',                   z:'12 oz', linea:'Granizado', precio:8500, w:.18,
+    r:[{i:'pulpa',c:.09},{i:'hielo',c:.22},{i:'vaso-12',c:1},{i:'pitillo',c:1},{i:'tapa',c:1},{i:'servilleta',c:1}]},
+  {id:'p-g16', n:'Granizado',                   z:'16 oz', linea:'Granizado', precio:10500, w:.10,
+    r:[{i:'pulpa',c:.12},{i:'hielo',c:.30},{i:'vaso-16',c:1},{i:'pitillo',c:1},{i:'tapa',c:1},{i:'servilleta',c:1}]}
+];
+const PRO = Object.fromEntries(PRODUCTOS.map(function(p){return [p.id,p]}));
+const PAGOS = ['Efectivo','Transferencia','Tarjeta'];
+const EQUIPO = ['Sebastián (propietario)','Camila · mostrador','Andrés · mostrador'];
+
+const WIN = 14;             // ventana de consumo, en días (figura 5)
+const MARGEN = 10;          // días de anticipación exigidos por OE4
+const COBERTURA_OBJ = 30;   // días que debe cubrir una compra sugerida
+const META = {seg:30, cierre:120, desv:5, margen:10, sug:80};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. HISTÓRICO DE DEMOSTRACIÓN — 21 días reconstruidos para la línea base
+   No se persiste: se regenera con la misma semilla en cada carga, de modo
+   que la analítica tenga sobre qué reportar antes del primer día de piloto.
+   ══════════════════════════════════════════════════════════════════════════ */
+const DIAS_DEMO = 21;
+function rng(seed){ var s = seed >>> 0; return function(){ s ^= s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296 } }
+function pick(rand, items, weights){
+  var t=0,i; for(i=0;i<weights.length;i++) t+=weights[i];
+  var x=rand()*t; for(i=0;i<weights.length;i++){ x-=weights[i]; if(x<=0) return items[i] }
+  return items[items.length-1];
+}
+const HORA_W = {11:.045,12:.07,13:.075,14:.08,15:.115,16:.135,17:.145,18:.13,19:.1,20:.065,21:.04};
+const TOP_W  = {'t-mora':.17,'t-fresa':.14,'t-areq':.13,'t-choco':.12,'t-galleta':.1,'t-brownie':.09,'t-banano':.08,'t-salsa':.07,'t-chips':.06,'t-mani':.04};
+
+function buildDemo(){
+  var rand = rng(20260821), out = [], hs = Object.keys(HORA_W).map(Number), hw = hs.map(function(h){return HORA_W[h]});
+  var tk = Object.keys(TOP_W), tw = tk.map(function(k){return TOP_W[k]});
+  var pk = PRODUCTOS.map(function(p){return p.id}), pw = PRODUCTOS.map(function(p){return p.w});
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  for(var d=DIAS_DEMO; d>=0; d--){
+    var day = new Date(hoy.getTime() - d*864e5), dow = day.getDay();
+    var base = 96 + (dow===0?26:dow===6?34:dow===5?16:dow===1?-18:0);
+    var n = Math.max(40, Math.round(base + (rand()-.5)*22));
+    if(d===0){ var frac=0, ahora=new Date().getHours();
+      hs.forEach(function(h){ if(h < ahora) frac += HORA_W[h] });
+      n = Math.round(n*frac); }
+    for(var k=0;k<n;k++){
+      var h = pick(rand,hs,hw), min = Math.floor(rand()*60);
+      var ts = new Date(day); ts.setHours(h,min,Math.floor(rand()*60),0);
+      if(ts.getTime() > Date.now()) continue;
+      var pid = pick(rand,pk,pw), p = PRO[pid], lineas = [{t:'p',ref:pid,cant:1,precio:p.precio}], total = p.precio;
+      var nt = p.linea==='Granizado' ? (rand()<.35?1:0) : (rand()<.17?0:rand()<.62?1:rand()<.9?2:3);
+      var used = {};
+      for(var j=0;j<nt;j++){
+        var tid = pick(rand,tk,tw); if(used[tid]) continue; used[tid]=1;
+        lineas.push({t:'a',ref:tid,cant:1,precio:INS[tid].pa}); total += INS[tid].pa;
+      }
+      out.push({id:'d'+d+'-'+k, ts:ts.getTime(), folio:0, user:rand()<.5?1:2,
+        lineas:lineas, total:total, pago:pick(rand,PAGOS,[.52,.33,.15]),
+        dur:Math.round(17000+rand()*26000), demo:1});
+    }
+  }
+  return out.sort(function(a,b){return a.ts-b.ts});
+}
+const DEMO = buildDemo();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. ESTADO — local primero, sincronizado cuando el visor lo permite
+   ══════════════════════════════════════════════════════════════════════════ */
+const LS = 'koolt.operacion.v1';
+function defState(){
+  var st = {};
+  INSUMOS.forEach(function(i){ st[i.id]=i.s0 });
+  return {v:1, rol:'admin', folio:311, stock:st, min:{}, precios:{}, ventas:[], movs:[],
+    ordenes:[], cierres:[], conteos:[], agot:[], cap:[], demo:true, contador:'', updatedAt:0};
+}
+var S = defState(), DB = null, dbRef = null, pend = null, suppress = false;
+
+function loadLocal(){
+  try{ var raw = localStorage.getItem(LS); if(!raw) return;
+    var o = JSON.parse(raw); if(o && o.v===1) S = Object.assign(defState(), o);
+  }catch(e){}
+}
+function persist(){
+  S.updatedAt = Date.now();
+  try{ localStorage.setItem(LS, JSON.stringify(S)) }catch(e){}
+  if(dbRef){ clearTimeout(pend); pend = setTimeout(function(){
+    suppress = true;
+    dbRef.set(JSON.parse(JSON.stringify(S))).catch(function(){}).then(function(){ suppress=false });
+  }, 450) }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. CÁLCULO — consumo, cobertura, punto de reorden, métricas
+   ══════════════════════════════════════════════════════════════════════════ */
+function ventas(){ return S.demo ? DEMO.concat(S.ventas) : S.ventas.slice() }
+function receta(pid){ return PRO[pid] ? PRO[pid].r : [] }
+function precio(pid){ return S.precios[pid] != null ? S.precios[pid] : PRO[pid].precio }
+function minimo(id){ return S.min[id] != null ? S.min[id] : INS[id].min }
+function margenDe(id){ return INS[id].mg != null ? INS[id].mg : MARGEN }
+function programado(id){ return margenDe(id) >= MARGEN }
+function stock(id){ var v = S.stock[id]; return v==null ? 0 : v }
+function usos(v, acc){
+  for(var i=0;i<v.lineas.length;i++){ var l = v.lineas[i];
+    if(l.t==='p'){ var r = receta(l.ref);
+      for(var j=0;j<r.length;j++) acc[r[j].i] = (acc[r[j].i]||0) + r[j].c*l.cant;
+    } else { var ins = INS[l.ref]; if(ins) acc[l.ref] = (acc[l.ref]||0) + ins.por*l.cant }
+  }
+  return acc;
+}
+var _cons = null, _consKey = '';
+function consumoDiario(){
+  var key = S.demo+'|'+S.ventas.length+'|'+Math.floor(Date.now()/6e4);
+  if(_cons && _consKey===key) return _cons;
+  var corte = Date.now() - WIN*864e5, acc = {}, vs = ventas();
+  for(var i=0;i<vs.length;i++) if(vs[i].ts >= corte) usos(vs[i], acc);
+  var out = {}; INSUMOS.forEach(function(x){ out[x.id] = (acc[x.id]||0)/WIN });
+  _cons = out; _consKey = key; return out;
+}
+function salud(id){
+  var cd = consumoDiario()[id] || 0, st = stock(id), lead = INS[id].lead, mg = margenDe(id);
+  var cob = cd > 0 ? st/cd : Infinity;
+  var pr = cd * (lead + mg);
+  var k = 'ok';
+  if(st <= 0) k = 'agotado';
+  else if(cob <= lead) k = 'critico';
+  else if(st <= pr || st <= minimo(id)) k = 'reordenar';
+  return {k:k, cob:cob, cd:cd, pr:pr, lead:lead, mg:mg, disparo:lead+mg, margen:cob===Infinity?Infinity:cob-lead};
+}
+function alertas(){
+  return INSUMOS.map(function(i){ var s = salud(i.id); s.id = i.id; return s })
+    .filter(function(s){ return s.k !== 'ok' })
+    .sort(function(a,b){ return a.cob - b.cob });
+}
+function sugerido(id){
+  var s = salud(id), i = INS[id];
+  var falta = s.cd * COBERTURA_OBJ - stock(id);
+  if(falta <= 0) return {paq:0, cant:0};
+  var paq = Math.ceil(falta / i.ec);
+  return {paq:paq, cant:paq*i.ec, costo:paq*i.cost};
+}
+function hoy0(){ var d = new Date(); d.setHours(0,0,0,0); return d.getTime() }
+function ventasDe(t0){ var t1 = t0 + 864e5; return ventas().filter(function(v){ return v.ts>=t0 && v.ts<t1 }) }
+function unidades(vs, filtro){
+  var n = 0; vs.forEach(function(v){ v.lineas.forEach(function(l){
+    if(l.t==='p' && (!filtro || filtro(PRO[l.ref]))) n += l.cant }) }); return n;
+}
+function suma(vs){ var t=0; vs.forEach(function(v){ t+=v.total }); return t }
+var DEMO_CIERRES = (function(){
+  var out = [], t0 = hoy0();
+  for(var d=5; d>=1; d--){
+    var t = t0 - d*864e5, vs = DEMO.filter(function(v){ return v.ts>=t && v.ts<t+864e5 });
+    if(!vs.length) continue;
+    var uh = unidades(vs, function(p){ return p.linea!=='Granizado' });
+    var cont = uh + (d%2 ? 1 : -1)*(1 + d%3);
+    out.push({t0:t, ts:t+864e5-1, n:vs.length, total:suma(vs), uniHel:uh,
+      uniGra:unidades(vs, function(p){ return p.linea==='Granizado' }),
+      contador:cont, dif:uh-cont, ms:780 + d*140, demo:1});
+  }
+  return out;
+})();
+function cierres(){ return S.demo ? DEMO_CIERRES.concat(S.cierres) : S.cierres }
+
+/* ── Métricas del piloto (capítulo 5.4) ──────────────────────────────────── */
+function metricas(){
+  var reales = S.ventas, al = alertas(), cons = consumoDiario();
+  var durs = reales.filter(function(v){return v.dur}).map(function(v){return v.dur});
+  var prom = durs.length ? durs.reduce(function(a,b){return a+b},0)/durs.length/1000 : null;
+  var lineasConVenta = {}; ventas().forEach(function(v){ v.lineas.forEach(function(l){
+    if(l.t==='p') lineasConVenta[PRO[l.ref].linea] = 1 }) });
+  var cob = LINEAS.filter(function(l){ return lineasConVenta[l] }).length / LINEAS.length * 100;
+  var ult = S.conteos.slice(-8);
+  var desv = ult.length ? ult.reduce(function(a,c){ return a + Math.abs(c.desvPct) },0)/ult.length : null;
+  var prog = INSUMOS.filter(function(i){ return programado(i.id) });
+  var disparo = prog.length ? Math.min.apply(null, prog.map(function(i){ return i.lead + margenDe(i.id) })) : null;
+  var tarde = al.filter(function(a){ return a.k==='critico' || a.k==='agotado' }).length;
+  var conSug = S.ordenes.filter(function(o){ return o.origen==='sugerencia' }).length;
+  var ult30 = Date.now() - 30*864e5;
+  var agot = S.agot.filter(function(a){ return a.ts >= ult30 }).length;
+  var cierre = S.cierres.length ? S.cierres[S.cierres.length-1].ms/1000 : null;
+  return [
+    {oe:'OE1', lab:'Ventas registradas digitalmente, sin papel intermedio', base:'0 % — todo el registro es en papel',
+      val: reales.length ? 100 : null, fmt:function(v){ return v.toFixed(0)+' %' },
+      meta:'≥ 95 %', ok:function(v){ return v>=95 }, nota: reales.length+' venta'+(reales.length===1?'':'s')+' en el sistema'},
+    {oe:'OE2', lab:'Tiempo promedio de registro por venta', base:'Sin medir — papel y luego doble digitación',
+      val: prom, fmt:function(v){ return v.toFixed(1)+' s' }, meta:'≤ 30 s', ok:function(v){ return v<=META.seg },
+      nota: durs.length ? 'medido en '+durs.length+' registro'+(durs.length===1?'':'s') : 'se mide al registrar la primera venta'},
+    {oe:'OE2', lab:'Tiempo de generación del cierre diario', base:'Cierre manual, sin tiempo medido',
+      val: cierre, fmt:function(v){ return v<1 ? (v*1000).toFixed(0)+' ms' : v.toFixed(1)+' s' },
+      meta:'≤ 2 min', ok:function(v){ return v<=META.cierre }, nota: cierre==null ? 'se mide al generar el primer cierre' : 'último cierre generado'},
+    {oe:'OE2b', lab:'Líneas de producto con venta medida', base:'Solo helado, vía contador de la máquina',
+      val: cob, fmt:function(v){ return v.toFixed(0)+' %' }, meta:'100 %', ok:function(v){ return v>=100 },
+      nota:'incluye granizado, que hoy no tiene contador'},
+    {oe:'OE3', lab:'Desviación entre inventario del sistema y conteo físico', base:'Sin control: revisión visual cada 15 días',
+      val: desv, fmt:function(v){ return v.toFixed(1)+' %' }, meta:'≤ 5 %', ok:function(v){ return v<=META.desv },
+      nota: ult.length ? 'promedio de los últimos '+ult.length+' conteos' : 'registre un conteo físico en Inventario'},
+    {oe:'OE4', lab:'Anticipación con la que se dispara la alerta de reorden', base:'Aviso informal por WhatsApp, sin anticipación planeada',
+      val: disparo, fmt:function(v){ return v.toFixed(0)+' días' },
+      meta:'≥ 10 días', ok:function(v){ return v>=META.margen },
+      nota:'consumo × (plazo de entrega + '+MARGEN+' días) en insumos de compra programada · '
+        + al.length + ' alerta' + (al.length===1?'':'s') + ' vigente' + (al.length===1?'':'s')
+        + (tarde ? ', ' + tarde + ' ya por debajo del plazo de entrega' : '')},
+    {oe:'OE5', lab:'Eventos de agotamiento en los últimos 30 días', base:'Sin registro formal; se estima con la merma reportada',
+      val: agot, fmt:function(v){ return v.toFixed(0) }, meta:'≤ 3 / mes', ok:function(v){ return v<=3 },
+      nota:'se registra cuando una venta deja un insumo en cero', inv:1},
+    {oe:'OE6', lab:'Órdenes de compra originadas en una sugerencia del sistema', base:'0 % — se deciden por criterio del propietario',
+      val: S.ordenes.length ? conSug/S.ordenes.length*100 : null, fmt:function(v){ return v.toFixed(0)+' %' },
+      meta:'≥ 80 %', ok:function(v){ return v>=META.sug },
+      nota: S.ordenes.length ? conSug+' de '+S.ordenes.length+' órdenes' : 'genere una orden en Compras'},
+    {oe:'OE7', lab:'Reportes de venta e inventario disponibles en línea', base:'Un Excel de totales, sin desagregación',
+      val: 80, fmt:function(v){ return v.toFixed(0)+' %' }, meta:'100 %', ok:function(v){ return v>=100 },
+      nota:'4 de 5: falta estacionalidad, que exige un mes de piloto (5.3)'},
+    {oe:'OE8', lab:'Personal capacitado y operando sin acompañamiento', base:'0 % — no existe sistema que capacitar',
+      val: S.cap.length/EQUIPO.length*100, fmt:function(v){ return v.toFixed(0)+' %' }, meta:'100 %',
+      ok:function(v){ return v>=100 }, nota: S.cap.length+' de '+EQUIPO.length+' personas'}
+  ];
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. FORMATO
+   ══════════════════════════════════════════════════════════════════════════ */
+function cop(n){ return '$' + Math.round(n).toLocaleString('es-CO') }
+function copK(n){
+  if(n >= 1e6) return '$' + (n/1e6).toFixed(n>=1e7?0:1).replace('.',',') + ' M';
+  if(n >= 1000) return '$' + Math.round(n/1000) + ' k';
+  return '$' + Math.round(n);
+}
+function qty(n, u){
+  if(u==='und') return Math.round(n).toLocaleString('es-CO') + ' und';
+  if(u==='g')   return n>=1000 ? (n/1000).toFixed(2).replace('.',',')+' kg' : Math.round(n)+' g';
+  if(u==='kg')  return n.toFixed(1).replace('.',',')+' kg';
+  return n.toFixed(1).replace('.',',') + ' ' + u;
+}
+function num(n, d){ return (d ? n.toFixed(d) : String(Math.round(n))).replace('.',',') }
+function hhmm(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') }
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fecha(ts){ var d = new Date(ts); return d.getDate()+' '+MES[d.getMonth()] }
+function fechaLarga(ts){
+  var d = new Date(ts), dow = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()];
+  return dow+', '+d.getDate()+' de '+['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][d.getMonth()];
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] }) }
+function folio(n){ return 'KOOLT-' + String(n).padStart(6,'0') }
+const CHIP = {ok:['chip-ok','En nivel'], reordenar:['chip-warn','Por reordenar'], critico:['chip-crit','Crítico'], agotado:['chip-crit','Agotado']};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. GRÁFICOS — SVG a escala, con capa de hover y tabla equivalente
+   ══════════════════════════════════════════════════════════════════════════ */
+function nice(max){
+  if(max <= 0) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log10(max))), r = max/mag;
+  var step = r<=1?1:r<=2?2:r<=2.5?2.5:r<=5?5:10;
+  return step*mag;
+}
+function topCap(path, x, y, w, h, r){
+  if(h < r+1) return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+Math.max(h,1)+'" fill="'+path+'"/>';
+  return '<path d="M'+x+' '+(y+h)+'V'+(y+r)+'Q'+x+' '+y+' '+(x+r)+' '+y+'H'+(x+w-r)+'Q'+(x+w)+' '+y+' '+(x+w)+' '+(y+r)+'V'+(y+h)+'Z" fill="'+path+'"/>';
+}
+function endCap(color, x, y, w, h, r){
+  if(w < r+1) return '<rect x="'+x+'" y="'+y+'" width="'+Math.max(w,1)+'" height="'+h+'" fill="'+color+'"/>';
+  return '<path d="M'+x+' '+y+'H'+(x+w-r)+'Q'+(x+w)+' '+y+' '+(x+w)+' '+(y+r)+'V'+(y+h-r)+'Q'+(x+w)+' '+(y+h)+' '+(x+w-r)+' '+(y+h)+'H'+x+'Z" fill="'+color+'"/>';
+}
+
+/* Ventas por día — una serie, área + línea con extremo marcado */
+function chDias(serie){
+  var W=700,H=212,PL=52,PR=10,PT=14,PB=28, pw=W-PL-PR, ph=H-PT-PB;
+  var max = nice(Math.max.apply(null, serie.map(function(d){return d.v})) * 1.08) || 1;
+  var n = serie.length, dx = n>1 ? pw/(n-1) : 0;
+  var X = function(i){ return PL + i*dx }, Y = function(v){ return PT + ph - v/max*ph };
+  var g='', i;
+  for(i=0;i<=4;i++){ var yv = max*i/4, y = Y(yv);
+    g += '<line class="gl" x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'"/>'
+      +  '<text class="ax" x="'+(PL-8)+'" y="'+(y+3.5)+'" text-anchor="end">'+copK(yv)+'</text>';
+  }
+  var line='', area='';
+  for(i=0;i<n;i++){ line += (i?'L':'M')+X(i).toFixed(1)+' '+Y(serie[i].v).toFixed(1) }
+  area = line + 'L'+X(n-1).toFixed(1)+' '+(PT+ph)+'L'+PL+' '+(PT+ph)+'Z';
+  var hits='', labs='';
+  for(i=0;i<n;i++){
+    var hw = Math.max(dx,10);
+    hits += '<rect class="hit" x="'+(X(i)-hw/2).toFixed(1)+'" y="'+PT+'" width="'+hw.toFixed(1)+'" height="'+ph+'"'
+      + ' data-tip="'+esc(serie[i].full+' · <b>'+cop(serie[i].v)+'</b> · '+serie[i].u+' unidades')+'"'
+      + ' data-tx="'+X(i).toFixed(1)+'" data-ty="'+Y(serie[i].v).toFixed(1)+'"/>';
+    if(i%3===0 || i===n-1) labs += '<text class="ax" x="'+X(i).toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle">'+esc(serie[i].lab)+'</text>';
+  }
+  var last = n-1;
+  return '<div class="ch"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Ventas diarias de los últimos '+n+' días, en pesos">'
+    + g
+    + '<path d="'+area+'" fill="var(--s1)" opacity=".12"/>'
+    + '<path d="'+line+'" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + '<circle cx="'+X(last).toFixed(1)+'" cy="'+Y(serie[last].v).toFixed(1)+'" r="4.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>'
+    + '<text class="dl" x="'+(X(last)-6).toFixed(1)+'" y="'+(Y(serie[last].v)-11).toFixed(1)+'" text-anchor="end">'+copK(serie[last].v)+'</text>'
+    + labs + hits
+    + '</svg><div class="tip"></div></div>';
+}
+
+/* Ventas por franja horaria — una serie, barras con extremo redondeado */
+function chHoras(serie){
+  var W=700,H=196,PL=52,PR=10,PT=12,PB=28, pw=W-PL-PR, ph=H-PT-PB;
+  var max = nice(Math.max.apply(null, serie.map(function(d){return d.v})) * 1.1) || 1;
+  var band = pw/serie.length, bw = Math.max(band-9, 6);
+  var g='', b='', i;
+  for(i=0;i<=3;i++){ var yv = max*i/3, y = PT+ph - yv/max*ph;
+    g += '<line class="gl" x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'"/>'
+      +  '<text class="ax" x="'+(PL-8)+'" y="'+(y+3.5).toFixed(1)+'" text-anchor="end">'+copK(yv)+'</text>';
+  }
+  for(i=0;i<serie.length;i++){
+    var h = serie[i].v/max*ph, x = PL + i*band + (band-bw)/2, y = PT+ph-h;
+    b += '<g data-tip="'+esc(serie[i].lab+' · <b>'+cop(serie[i].v)+'</b> · '+serie[i].u+' ventas')+'" data-tx="'+(x+bw/2).toFixed(1)+'" data-ty="'+y.toFixed(1)+'">'
+      + topCap(serie[i].pk?'var(--s1)':'var(--s2)', x.toFixed(1), y.toFixed(1), bw.toFixed(1), h.toFixed(1), 4)
+      + '<rect class="hit" x="'+(PL+i*band).toFixed(1)+'" y="'+PT+'" width="'+band.toFixed(1)+'" height="'+ph+'"/></g>';
+    b += '<text class="ax" x="'+(PL+i*band+band/2).toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle">'+serie[i].h+'</text>';
+  }
+  return '<div class="ch"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Ventas acumuladas por franja horaria; la franja de mayor venta está resaltada">'
+    + g + b + '</svg><div class="tip"></div></div>';
+}
+
+/* Barras horizontales — una serie de magnitud, etiqueta directa al final */
+function chBarrasH(items, color, fmt){
+  var W=700, rh=27, PT=4, PLab=168, PR=96, pw=W-PLab-PR;
+  var H = PT + items.length*rh + 6;
+  var max = Math.max.apply(null, items.map(function(d){return d.v})) || 1;
+  var b='';
+  for(var i=0;i<items.length;i++){
+    var y = PT + i*rh, bw = items[i].v/max*pw, h = 13;
+    b += '<text class="axl" x="0" y="'+(y+h+1)+'">'+esc(items[i].lab)+'</text>'
+      +  '<g data-tip="'+esc(items[i].tip)+'" data-tx="'+(PLab+bw/2).toFixed(1)+'" data-ty="'+(y+3)+'">'
+      +  endCap(items[i].color||color, PLab, y+3, Math.max(bw,2).toFixed(1), h, 4)
+      +  '<rect class="hit" x="'+PLab+'" y="'+y+'" width="'+pw+'" height="'+rh+'"/></g>'
+      +  '<text class="dl" x="'+(PLab+Math.max(bw,2)+9).toFixed(1)+'" y="'+(y+h+1)+'">'+esc(fmt(items[i])) +'</text>';
+  }
+  return '<div class="ch"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Barras horizontales ordenadas de mayor a menor, con el valor escrito al final de cada barra">'
+    + b + '</svg><div class="tip"></div></div>';
+}
+
+/* Cobertura de inventario — barras con marca del punto de reorden */
+function chCobertura(items){
+  var W=700, rh=29, PLab=186, PR=78, pw=W-PLab-PR, PT=16;
+  var H = PT + items.length*rh + 10;
+  var max = Math.max(32, Math.ceil(Math.max.apply(null, items.map(function(d){return Math.min(d.cob,60)}))/10)*10);
+  var b='', i;
+  for(i=0;i<=max;i+=10){
+    var x = PLab + i/max*pw;
+    b += '<line class="gl" x1="'+x.toFixed(1)+'" y1="'+PT+'" x2="'+x.toFixed(1)+'" y2="'+(H-10)+'"/>'
+      +  '<text class="ax" x="'+x.toFixed(1)+'" y="'+(PT-5)+'" text-anchor="middle">'+i+'</text>';
+  }
+  b += '<text class="axl" x="'+(PLab+pw+6)+'" y="'+(PT-5)+'">días</text>';
+  for(i=0;i<items.length;i++){
+    var it = items[i], y = PT + i*rh + 4, cob = Math.min(it.cob, max), bw = cob/max*pw;
+    var col = it.k==='ok' ? 'var(--s4)' : it.k==='reordenar' ? 'var(--s3)' : 'var(--crit)';
+    var mkx = PLab + Math.min(it.disparo, max)/max*pw;
+    b += '<text class="axl" x="0" y="'+(y+13)+'">'+esc(it.nom)+'</text>'
+      +  '<g data-tip="'+esc(it.nom+' · cobertura <b>'+num(it.cob,1)+' días</b> · la alerta se dispara a los '+it.disparo+' días de cobertura')+'" data-tx="'+(PLab+bw/2).toFixed(1)+'" data-ty="'+y+'">'
+      +  endCap(col, PLab, y+2, Math.max(bw,2).toFixed(1), 14, 4)
+      +  '<rect class="hit" x="'+PLab+'" y="'+y+'" width="'+pw+'" height="'+rh+'"/></g>'
+      +  '<line x1="'+mkx.toFixed(1)+'" y1="'+(y-1)+'" x2="'+mkx.toFixed(1)+'" y2="'+(y+17)+'" stroke="var(--ink-3)" stroke-width="2"/>'
+      +  '<text class="dl" x="'+(PLab+pw+8)+'" y="'+(y+13)+'">'+num(it.cob,1)+'</text>';
+  }
+  return '<div class="ch"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Días de cobertura por insumo, con una marca vertical en el punto de reorden de cada referencia">'
+    + b + '</svg><div class="tip"></div></div>';
+}
+
+function tabla(cols, rows){
+  var h = cols.map(function(c){ return '<th'+(c.n?' class="n"':'')+'>'+esc(c.t)+'</th>' }).join('');
+  var b = rows.map(function(r){ return '<tr>'+r.map(function(c,i){
+    return '<td'+(cols[i].n?' class="n"':'')+'>'+c+'</td>' }).join('')+'</tr>' }).join('');
+  return '<div class="tw"><table class="t data-t"><thead><tr>'+h+'</tr></thead><tbody>'+b+'</tbody></table></div>';
+}
+function conTabla(id, chartHtml, tablaHtml){
+  return chartHtml + '<div id="'+id+'" hidden style="margin-top:12px">'+tablaHtml+'</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. SERIES — de las ventas a los datos de cada gráfico
+   ══════════════════════════════════════════════════════════════════════════ */
+function serieDias(n){
+  var t0 = hoy0(), out = [], vs = ventas(), map = {};
+  vs.forEach(function(v){ var d = Math.floor((v.ts - t0)/864e5);
+    if(!map[d]) map[d] = {v:0,u:0}; map[d].v += v.total; map[d].u += v.lineas.reduce(function(a,l){ return a+(l.t==='p'?l.cant:0) },0) });
+  for(var i=n-1;i>=0;i--){ var ts = t0 - i*864e5, m = map[-i] || {v:0,u:0};
+    out.push({lab:fecha(ts), full:fechaLarga(ts), v:m.v, u:m.u, ts:ts}) }
+  return out;
+}
+function serieHoras(){
+  var corte = Date.now() - WIN*864e5, map = {}, i;
+  for(i=11;i<=21;i++) map[i] = {v:0,u:0};
+  ventas().forEach(function(v){ if(v.ts<corte) return; var h = new Date(v.ts).getHours();
+    if(!map[h]) map[h] = {v:0,u:0}; map[h].v += v.total; map[h].u++ });
+  var ks = Object.keys(map).map(Number).sort(function(a,b){return a-b});
+  var mx = Math.max.apply(null, ks.map(function(h){return map[h].v}));
+  return ks.map(function(h){ return {h:h, lab:h+':00 – '+(h+1)+':00', v:map[h].v, u:map[h].u, pk:mx>0 && map[h].v===mx} });
+}
+function serieToppings(){
+  var corte = Date.now() - WIN*864e5, map = {};
+  ventas().forEach(function(v){ if(v.ts<corte) return;
+    v.lineas.forEach(function(l){ if(l.t==='a') map[l.ref] = (map[l.ref]||0) + l.cant }) });
+  return TOPPINGS.map(function(t){ return {id:t.id, lab:t.n, v:map[t.id]||0} })
+    .sort(function(a,b){ return b.v-a.v })
+    .map(function(r){ var ins = INS[r.id];
+      r.tip = r.lab+' · <b>'+r.v.toLocaleString('es-CO')+' adiciones</b> en '+WIN+' días · '+qty(r.v*ins.por, ins.u)+' consumidos';
+      r.gramos = r.v*ins.por; return r });
+}
+function serieLineas(){
+  var corte = Date.now() - WIN*864e5, map = {};
+  LINEAS.forEach(function(l){ map[l] = {v:0,u:0} });
+  ventas().forEach(function(v){ if(v.ts<corte) return;
+    v.lineas.forEach(function(l){ if(l.t!=='p') return; var ln = PRO[l.ref].linea;
+      map[ln].v += l.precio*l.cant; map[ln].u += l.cant }) });
+  var tot = LINEAS.reduce(function(a,l){ return a+map[l].v },0) || 1;
+  return LINEAS.map(function(l,i){ return {lab:l, v:map[l].v, u:map[l].u, pct:map[l].v/tot*100,
+    color:'var(--s'+(i+1)+')',
+    tip:l+' · <b>'+cop(map[l].v)+'</b> · '+map[l].u.toLocaleString('es-CO')+' unidades · '+num(map[l].v/tot*100,1)+' % de la venta'} });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. VISTAS
+   ══════════════════════════════════════════════════════════════════════════ */
+const VIEWS = {
+  pos:{t:'Venta', eye:'Proceso 1 · registro de ventas', rol:'todos',
+    sub:'Toque el producto, agregue las adiciones y cobre. El registro queda con folio, hora y usuario: no hay papel intermedio ni transcripción posterior.'},
+  cierre:{t:'Cierre diario', eye:'Proceso 2 · cierre de operación', rol:'todos',
+    sub:'El consolidado del día lo genera el sistema. El contador de la máquina de helados se ingresa a mano y sirve como control cruzado, no como fuente.'},
+  inventario:{t:'Inventario', eye:'Procesos 5 y 6 · existencias y reorden', rol:'admin',
+    sub:'Existencias en tiempo real: cada venta descuenta los ingredientes por receta. La alerta se dispara ' + MARGEN + ' días antes del agotamiento proyectado.'},
+  compras:{t:'Compras', eye:'Proceso 7 · reabastecimiento', rol:'admin',
+    sub:'La sugerencia se calcula con el consumo real de los últimos ' + WIN + ' días y se redondea a la unidad de empaque del proveedor.'},
+  analitica:{t:'Analítica', eye:'Proceso 8 · reportes de operación', rol:'admin',
+    sub:'Lo que el Excel de totales no podía responder: qué producto y qué topping se venden, en qué día y en qué franja horaria.'},
+  metricas:{t:'Métricas del piloto', eye:'Capítulo 5.4 · métricas de éxito', rol:'admin',
+    sub:'Los diez indicadores del acta, medidos sobre el uso real de esta aplicación y contrastados contra la línea base del diagnóstico.'},
+  catalogo:{t:'Catálogo y recetas', eye:'Procesos 3 y 4 · maestros', rol:'admin',
+    sub:'Productos, precios y la receta que define cuánto consume cada presentación. Sin receta no hay descuento automático de inventario.'}
+};
+
+/* ── Venta ──────────────────────────────────────────────────────────────── */
+var tick = {lineas:[], pago:'Efectivo', t0:0};
+var ultimo = null;
+
+function viewPos(){
+  var prods = PRODUCTOS.map(function(p){
+    var falta = p.r.filter(function(x){ return stock(x.i) < x.c });
+    return '<button class="pbtn'+(falta.length?' falta':'')+'" data-act="add-p" data-id="'+p.id+'">'
+      + '<span class="pn">'+esc(p.n)+'</span><span class="pz">'
+      + (falta.length ? 'falta ' + esc(INS[falta[0].i].n.toLowerCase()) : esc(p.z)+' · '+esc(p.linea)) + '</span>'
+      + '<span class="pp">'+cop(precio(p.id))+'</span></button>';
+  }).join('');
+  var tops = TOPPINGS.map(function(t){
+    var hay = stock(t.id) >= t.por, en = tick.lineas.some(function(l){ return l.t==='a' && l.ref===t.id });
+    return '<button class="tbtn" data-act="add-a" data-id="'+t.id+'" aria-pressed="'+en+'"'+(hay?'':' disabled')+'>'
+      + esc(t.n) + '<span class="tp">'+(hay ? '+'+cop(t.pa) : 'agotado')+'</span></button>';
+  }).join('');
+
+  var total = tick.lineas.reduce(function(a,l){ return a + l.precio*l.cant }, 0);
+  var filas = tick.lineas.map(function(l,i){
+    var nom = l.t==='p' ? PRO[l.ref].n : INS[l.ref].n;
+    var det = l.t==='p' ? PRO[l.ref].z+' · '+PRO[l.ref].linea : 'adición';
+    return '<div class="tl"><span class="q">'+l.cant+'×</span>'
+      + '<span class="d">'+esc(nom)+'<em>'+esc(det)+'</em></span>'
+      + '<span class="m">'+cop(l.precio*l.cant)+'</span>'
+      + '<button class="x" data-act="del-l" data-i="'+i+'" aria-label="Quitar '+esc(nom)+'">×</button></div>';
+  }).join('');
+
+  var nAd = tick.lineas.reduce(function(a,l){ return a+(l.t==='a'?l.cant:0) },0);
+  var nPr = tick.lineas.reduce(function(a,l){ return a+(l.t==='p'?l.cant:0) },0);
+
+  var comp = '';
+  if(ultimo){
+    comp = '<div class="card" style="margin-top:16px"><div class="card-h"><h3>Último comprobante</h3>'
+      + '<div class="r"><span class="chip chip-ok"><span class="dot"></span>Registrado</span></div></div>'
+      + '<div class="card-b" style="padding-top:10px">'
+      + '<div class="row" style="gap:22px;align-items:flex-start">'
+      + '<div><div class="eyebrow">Folio</div><div class="num" style="font-size:15px;font-weight:500">'+folio(ultimo.folio)+'</div></div>'
+      + '<div><div class="eyebrow">Hora</div><div class="num" style="font-size:15px">'+hhmm(ultimo.ts)+'</div></div>'
+      + '<div><div class="eyebrow">Total</div><div class="num" style="font-size:15px;font-weight:500">'+cop(ultimo.total)+'</div></div>'
+      + '<div><div class="eyebrow">Medio de pago</div><div style="font-size:14px">'+esc(ultimo.pago)+'</div></div>'
+      + '<div><div class="eyebrow">Tiempo de registro</div><div class="num" style="font-size:15px;color:'
+      + (ultimo.dur/1000 <= META.seg ? 'var(--good)' : 'var(--warn)')+'">'+num(ultimo.dur/1000,1)+' s</div></div>'
+      + '</div>'
+      + '<div class="note" style="margin-top:12px"><svg><use href="#i-info"/></svg><div>'
+      + 'Comprobante interno: el proyecto excluye explícitamente la facturación electrónica ante la DIAN (alcance 1.3, exclusión 3).'
+      + ' Este registro descontó ' + ultimo.nIns + ' ingredientes del inventario por receta.</div></div>'
+      + '</div></div>';
+  }
+
+  return '<div class="pos">'
+    + '<div class="stack">'
+      + '<div class="card"><div class="card-h"><h3>Producto</h3><div class="r"><span class="chip">4 líneas · granizado incluido</span></div></div>'
+      + '<div class="card-b"><div class="pgrid">'+prods+'</div></div></div>'
+      + '<div class="card"><div class="card-h"><h3>Adiciones</h3><div class="r"><span class="chip">'+TOPPINGS.length+' referencias</span></div></div>'
+      + '<div class="card-b"><div class="row" style="gap:7px">'+tops+'</div></div></div>'
+      + comp
+    + '</div>'
+    + '<div class="tick">'
+      + '<div class="tick-h"><div class="row" style="justify-content:space-between"><strong style="font-family:var(--fd);font-size:15px">Venta en curso</strong>'
+      + '<span class="fol">'+folio(S.folio+1)+'</span></div>'
+      + '<div class="timer" id="tmr">'+(tick.t0 ? '<span class="dot" style="width:6px;height:6px;border-radius:99px;background:var(--accent)"></span><b>0,0 s</b> desde el primer toque' : 'El cronómetro arranca con el primer toque')+'</div></div>'
+      + (tick.lineas.length
+          ? '<div class="tick-l">'+filas+'</div>'
+          : '<div class="empty">Sin líneas todavía.<br>Toque un producto para empezar.</div>')
+      + '<div class="tick-tot">'
+        + '<div class="tr"><span>'+nPr+' producto'+(nPr===1?'':'s')+' · '+nAd+' adición'+(nAd===1?'':'es')+'</span><span>'+cop(total)+'</span></div>'
+        + '<div class="tr big"><span>Total</span><span>'+cop(total)+'</span></div>'
+      + '</div>'
+      + '<div class="tick-f">'
+        + '<div><label class="fl" for="pago">Medio de pago</label>'
+        + '<div class="seg" role="group" aria-label="Medio de pago" style="width:100%">'
+        + PAGOS.map(function(p){ return '<button data-act="pago" data-p="'+p+'" aria-pressed="'+(tick.pago===p)+'" style="flex:1">'+p+'</button>' }).join('')
+        + '</div></div>'
+        + '<button class="btn btn-pri" data-act="cobrar" style="width:100%;padding:11px"'+(tick.lineas.length?'':' disabled')+'>Cobrar y registrar</button>'
+        + (tick.lineas.length ? '<button class="btn btn-gh btn-sm" data-act="cancelar">Cancelar venta</button>' : '')
+      + '</div>'
+    + '</div></div>';
+}
+
+function cobrar(){
+  if(!tick.lineas.length) return;
+  var dur = tick.t0 ? Date.now()-tick.t0 : 0;
+  S.folio++;
+  var acc = {}, v = {id:'r'+Date.now(), ts:Date.now(), folio:S.folio, user:S.rol,
+    lineas:tick.lineas.map(function(l){ return {t:l.t, ref:l.ref, cant:l.cant, precio:l.precio} }),
+    total:tick.lineas.reduce(function(a,l){ return a+l.precio*l.cant },0), pago:tick.pago, dur:dur};
+  usos(v, acc);
+  var vacios = [];
+  Object.keys(acc).forEach(function(id){
+    var antes = stock(id); S.stock[id] = Math.max(0, antes - acc[id]);
+    S.movs.push({ts:v.ts, id:id, tipo:'venta', cant:-acc[id], ref:folio(v.folio)});
+    if(antes > 0 && S.stock[id] <= 0){ vacios.push(INS[id].n); S.agot.push({ts:v.ts, id:id}) }
+  });
+  if(S.movs.length > 400) S.movs = S.movs.slice(-400);
+  v.nIns = Object.keys(acc).length;
+  S.ventas.push(v); ultimo = v;
+  tick = {lineas:[], pago:tick.pago, t0:0};
+  persist(); render();
+  toast(vacios.length
+    ? 'Venta ' + folio(v.folio) + ' registrada · ' + vacios[0] + ' quedó en cero: se registró un evento de agotamiento'
+    : 'Venta ' + folio(v.folio) + ' registrada en ' + num(dur/1000,1) + ' s · inventario actualizado');
+}
+
+/* ── Cierre diario ──────────────────────────────────────────────────────── */
+function viewCierre(){
+  var t0 = hoy0(), vs = ventasDe(t0), total = suma(vs);
+  var uniHel = unidades(vs, function(p){ return p.linea!=='Granizado' });
+  var uniGra = unidades(vs, function(p){ return p.linea==='Granizado' });
+  var yaCerrado = S.cierres.some(function(c){ return c.t0===t0 });
+  var sinVentas = vs.length === 0;
+
+  var porProd = PRODUCTOS.map(function(p){
+    var u=0, m=0; vs.forEach(function(v){ v.lineas.forEach(function(l){
+      if(l.t==='p' && l.ref===p.id){ u+=l.cant; m+=l.precio*l.cant } }) });
+    return [esc(p.n)+' <span class="muted">'+esc(p.z)+'</span>', String(u), cop(m)];
+  });
+  var porPago = PAGOS.map(function(pg){
+    var n=0, m=0; vs.forEach(function(v){ if(v.pago===pg){ n++; m+=v.total } });
+    return [pg, String(n), cop(m)];
+  });
+  var adic = 0; vs.forEach(function(v){ v.lineas.forEach(function(l){ if(l.t==='a') adic+=l.cant }) });
+
+  var hist = cierres().slice().reverse().map(function(c){
+    var dif = c.contador==null ? '—' : (c.dif>0?'+':'')+c.dif;
+    return ['<span class="em">'+fechaLarga(c.t0)+'</span>'+(c.demo?' <span class="chip tiny">histórico</span>':''),
+      String(c.n), cop(c.total), String(c.uniHel),
+      c.contador==null ? '<span class="muted">no ingresado</span>' : String(c.contador), dif,
+      num(c.ms/1000,1)+' s'];
+  });
+
+  return '<div class="kpis" style="margin-bottom:18px">'
+    + kpi('Venta del día', cop(total), vs.length+' transacciones registradas', 1)
+    + kpi('Unidades de helado', String(uniHel), 'contraste con el contador de la máquina')
+    + kpi('Unidades de granizado', String(uniGra), 'línea sin contador físico — medida solo aquí')
+    + kpi('Adiciones vendidas', String(adic), 'toppings servidos sobre los productos')
+    + '</div>'
+    + '<div class="grid g2">'
+      + '<div class="card"><div class="card-h"><h3>Generar el cierre</h3><div class="r">'
+        + (yaCerrado ? '<span class="chip chip-ok"><span class="dot"></span>Día ya cerrado</span>' : '<span class="chip">'+fechaLarga(t0)+'</span>')
+        + '</div></div><div class="card-b">'
+        + '<div class="row" style="align-items:flex-end;gap:12px">'
+        + '<div style="flex:1;min-width:190px"><label class="fl" for="contador">Contador de la máquina de helados</label>'
+        + '<input id="contador" type="number" min="0" step="1" placeholder="unidades que marcó el equipo" value="'+esc(S.contador)+'"></div>'
+        + '<button class="btn btn-pri" data-act="cerrar">Generar cierre del día</button>'
+        + '</div>'
+        + (sinVentas ? '<div class="note" style="margin-top:14px"><svg><use href="#i-bell"/></svg><div>'
+            + 'El día todavía no tiene ventas registradas: KOOLT abre a las 11:00 y el consolidado se construye a medida que avanza el turno. '
+            + 'Registre una venta en el módulo <b>Venta</b> y vuelva aquí — el cierre se puede generar en cualquier momento del día.</div></div>' : '')
+        + '<div class="note" style="margin-top:14px"><svg><use href="#i-info"/></svg><div>'
+        + 'El contraste contra el contador es la práctica que aporta Square for Restaurants (benchmarking 4.1): expone merma, pruebas de calibración y consumo interno que de otro modo quedan invisibles. '
+        + 'Es opcional —si no se ingresa, el cierre se genera igual— y nunca reemplaza el registro de ventas.</div></div>'
+        + '</div></div>'
+      + '<div class="card"><div class="card-h"><h3>Unidades por producto</h3></div><div class="card-b" style="padding-top:8px">'
+        + tabla([{t:'Producto'},{t:'Unidades',n:1},{t:'Venta',n:1}], porProd)
+        + '<div class="eyebrow" style="margin-top:16px">Por medio de pago</div>'
+        + tabla([{t:'Medio'},{t:'Transacciones',n:1},{t:'Monto',n:1}], porPago)
+        + '</div></div>'
+    + '</div>'
+    + '<div class="sec-t"><h2>Cierres generados</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-h"><h3>Histórico</h3><div class="r">'
+      + '<button class="btn btn-sm" data-act="csv-cierres">Exportar CSV</button></div></div>'
+      + '<div class="card-b" style="padding-top:8px">'
+      + (hist.length ? tabla([{t:'Fecha'},{t:'Ventas',n:1},{t:'Total',n:1},{t:'Und. helado',n:1},{t:'Contador',n:1},{t:'Diferencia',n:1},{t:'Generado en',n:1}], hist)
+        : '<div class="empty">Todavía no se ha generado ningún cierre. El tiempo de generación se mide aquí: es el indicador de OE2.</div>')
+      + '<p class="tiny muted" style="margin-top:12px">La diferencia contra el contador expone lo que el total de ventas no puede explicar por sí solo: merma, calibración de la máquina y consumo interno. Una diferencia sostenida en el mismo sentido es la señal de que algo del proceso cambió.</p>'
+      + '</div></div>';
+}
+function generarCierre(){
+  var t = performance.now(), t0 = hoy0(), vs = ventasDe(t0);
+  var el = document.getElementById('contador'), raw = el ? el.value.trim() : '';
+  var cont = raw === '' ? null : Math.round(Number(raw));
+  var uniHel = unidades(vs, function(p){ return p.linea!=='Granizado' });
+  var c = {t0:t0, ts:Date.now(), n:vs.length, total:suma(vs), uniHel:uniHel, uniGra:unidades(vs, function(p){ return p.linea==='Granizado' }),
+    contador:cont, dif: cont==null ? null : uniHel-cont, ms:Math.max(performance.now()-t, 1)};
+  S.cierres = S.cierres.filter(function(x){ return x.t0!==t0 }).concat([c]);
+  S.contador = raw;
+  persist(); render();
+  toast('Cierre de ' + fechaLarga(t0) + ' generado en ' + num(c.ms/1000,2) + ' s'
+    + (c.dif==null ? '' : ' · diferencia de ' + c.dif + ' unidades contra el contador'));
+}
+
+/* ── Inventario ─────────────────────────────────────────────────────────── */
+function viewInv(){
+  var al = alertas(), cons = consumoDiario();
+  var alertHtml = al.length ? al.map(function(a){
+    var i = INS[a.id], s = sugerido(a.id), ch = CHIP[a.k];
+    return '<div class="inv-r">'
+      + '<div class="nm">'+esc(i.n)+'<em>'+esc(i.prov)+' · entrega en '+i.lead+' día'+(i.lead===1?'':'s')+'</em></div>'
+      + '<div><span class="chip '+ch[0]+'"><span class="dot"></span>'+ch[1]+'</span></div>'
+      + '<div class="num tiny">'+(isFinite(a.cob) ? num(a.cob,1)+' días' : 'sin consumo')+'<br><span class="muted">'+qty(stock(a.id), i.u)+'</span></div>'
+      + '<div class="tiny muted">'+(isFinite(a.margen)
+          ? (a.margen >= MARGEN ? 'Alerta con ' + num(a.margen,0) + ' días de margen' : 'Margen de solo ' + num(Math.max(a.margen,0),1) + ' días: alcanza para ' + num(a.cob,1) + ' días y el proveedor tarda ' + i.lead)
+          : 'Mínimo de ' + qty(minimo(a.id), i.u) + ' no alcanzado')
+        + '</div>'
+      + '<div>'+(s.paq ? '<button class="btn btn-sm" data-act="ir-compras">Comprar '+s.paq+' '+(s.paq===1?'empaque':'empaques')+'</button>' : '<span class="tiny muted">—</span>')+'</div>'
+      + '</div>';
+  }).join('') : '<div class="empty">Ninguna referencia por debajo de su punto de reorden.</div>';
+
+  var filas = INSUMOS.map(function(i){
+    var a = salud(i.id), ch = CHIP[a.k], st = stock(i.id), mn = minimo(i.id);
+    var cls = a.k==='ok' ? '' : a.k==='reordenar' ? 'w' : 'c';
+    var full = Math.max(mn*2.2, st, a.pr*1.1, 1);
+    return '<div class="inv-r">'
+      + '<div class="nm">'+esc(i.n)+'<em>'+esc(i.emp)+' · '+esc(i.prov)+'</em></div>'
+      + '<div><span class="chip '+ch[0]+'"><span class="dot"></span>'+ch[1]+'</span></div>'
+      + '<div class="num tiny">'+qty(st, i.u)+'<br><span class="muted">'+(isFinite(a.cob)?num(a.cob,1)+' d':'—')+' de cobertura</span></div>'
+      + '<div><div class="meter" title="mínimo '+qty(mn,i.u)+'"><i class="'+cls+'" style="width:'+Math.min(100, st/full*100).toFixed(1)+'%"></i>'
+        + '<span class="mk" style="left:'+Math.min(99, mn/full*100).toFixed(1)+'%"></span></div>'
+        + '<div class="tiny muted" style="margin-top:4px">consumo '+qty(a.cd, i.u)+'/día · reorden a '+qty(a.pr, i.u)+'</div></div>'
+      + '<div class="row" style="gap:5px"><button class="btn btn-sm" data-act="pre-mov" data-id="'+i.id+'">Movimiento</button>'
+        + '<button class="btn btn-sm btn-gh" data-act="pre-ct" data-id="'+i.id+'">Conteo</button></div>'
+      + '</div>';
+  }).join('');
+
+  var movs = S.movs.slice(-14).reverse().map(function(m){
+    var i = INS[m.id], et = {venta:'Venta',entrada:'Entrada',merma:'Merma',ajuste:'Ajuste',conteo:'Conteo físico'}[m.tipo];
+    return [hhmm(m.ts)+' <span class="muted">'+fecha(m.ts)+'</span>', esc(i.n), et,
+      (m.cant>0?'+':'')+qty(Math.abs(m.cant), i.u).replace(/^/, m.cant<0?'−':''), esc(m.ref||'—')];
+  });
+
+  var cobItems = INSUMOS.map(function(i){ var a = salud(i.id); return {nom:i.n, cob:a.cob, k:a.k, lead:i.lead, disparo:a.disparo} })
+    .filter(function(x){ return isFinite(x.cob) }).sort(function(a,b){ return a.cob-b.cob }).slice(0,12);
+
+  var opts = INSUMOS.map(function(i){ return '<option value="'+i.id+'">'+esc(i.n)+' ('+i.u+')</option>' }).join('');
+
+  return '<div class="kpis" style="margin-bottom:18px">'
+    + kpi('Referencias en alerta', String(al.length), 'de ' + INSUMOS.length + ' referencias controladas', al.length?1:0)
+    + kpi('Agotadas ahora', String(INSUMOS.filter(function(i){ return stock(i.id)<=0 }).length), 'stock en cero')
+    + kpi('Valor del inventario', copK(INSUMOS.reduce(function(a,i){ return a + stock(i.id)/i.ec*i.cost },0)), 'a costo de última compra')
+    + kpi('Conteos registrados', String(S.conteos.length), S.conteos.length ? 'desviación promedio ' + num(S.conteos.slice(-8).reduce(function(a,c){ return a+Math.abs(c.desvPct) },0)/Math.min(S.conteos.length,8),1) + ' %' : 'ninguno todavía')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><h3>Alertas de punto de reorden</h3>'
+      + '<div class="r"><span class="chip chip-ac"><span class="dot"></span>margen exigido: '+MARGEN+' días</span></div></div>'
+      + '<div class="card-b" style="padding-top:6px">'+alertHtml+'</div></div>'
+    + '<div class="sec-t"><h2>Registrar un movimiento</h2><div class="l"></div></div>'
+    + '<div class="grid g2">'
+      + '<div class="card"><div class="card-h"><h3>Entrada, merma o ajuste</h3></div><div class="card-b">'
+        + '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px">'
+        + '<div style="grid-column:1/-1"><label class="fl" for="mv-ins">Insumo</label><select id="mv-ins">'+opts+'</select></div>'
+        + '<div><label class="fl" for="mv-tipo">Tipo</label><select id="mv-tipo">'
+          + '<option value="entrada">Entrada — reposición desde bodega</option>'
+          + '<option value="merma">Merma — vencimiento o descarte</option>'
+          + '<option value="ajuste">Ajuste manual</option></select></div>'
+        + '<div><label class="fl" for="mv-cant">Cantidad (unidad base)</label><input id="mv-cant" type="number" step="any" min="0" placeholder="0"></div>'
+        + '<div style="grid-column:1/-1"><label class="fl" for="mv-nota">Nota</label><input id="mv-nota" placeholder="p. ej. 2 bolsas traídas de bodega"></div>'
+        + '</div>'
+        + '<div class="row" style="margin-top:12px"><button class="btn btn-pri" data-act="mov">Registrar movimiento</button></div>'
+        + '<div class="note" style="margin-top:12px"><svg><use href="#i-info"/></svg><div>El stock es el total de la referencia —las dos o tres bolsas del local más el saldo en bodega—. La <b>entrada</b> documenta tanto la reposición desde bodega como la recepción de una compra; separar las dos ubicaciones (bodega y mostrador) está previsto en el modelo de datos pero queda fuera de este MVP.</div></div>'
+        + '<div class="note" style="margin-top:10px"><svg><use href="#i-info"/></svg><div>La merma documenta el descarte que el diagnóstico cuantificó: ~0,5 L de leche cada 3 días y ~50 g diarios de topping. Registrarla es lo que evita que el stock del sistema se desvíe en silencio.</div></div>'
+        + '</div></div>'
+      + '<div class="card"><div class="card-h"><h3>Conteo físico</h3><div class="r"><span class="chip">mide OE3</span></div></div><div class="card-b">'
+        + '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px">'
+        + '<div style="grid-column:1/-1"><label class="fl" for="ct-ins">Insumo</label><select id="ct-ins">'+opts+'</select></div>'
+        + '<div><label class="fl" for="ct-cant">Cantidad contada</label><input id="ct-cant" type="number" step="any" min="0" placeholder="0"></div>'
+        + '<div><label class="fl">Según el sistema</label><div class="num" id="ct-sis" style="padding:7px 0">—</div></div>'
+        + '</div>'
+        + '<div class="row" style="margin-top:12px"><button class="btn btn-pri" data-act="conteo">Registrar conteo</button></div>'
+        + (S.conteos.length ? '<div style="margin-top:14px">' + tabla([{t:'Insumo'},{t:'Sistema',n:1},{t:'Físico',n:1},{t:'Desviación',n:1}],
+            S.conteos.slice(-6).reverse().map(function(c){ return [esc(INS[c.id].n), qty(c.sis,INS[c.id].u), qty(c.fis,INS[c.id].u),
+              '<span style="color:'+(Math.abs(c.desvPct)<=META.desv?'var(--good)':'var(--crit)')+'">'+(c.desvPct>0?'+':'')+num(c.desvPct,1)+' %</span>'] })) + '</div>'
+          : '<div class="note" style="margin-top:14px"><svg><use href="#i-info"/></svg><div>El conteo no corrige el stock en silencio: deja un movimiento con su desviación, que es exactamente lo que mide el objetivo OE3 (≤ 5 % por ingrediente).</div></div>')
+        + '</div></div>'
+    + '</div>'
+    + '<div class="sec-t"><h2>Existencias</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-b">'+filas+'</div></div>'
+    + '<div class="sec-t"><h2>Cobertura por insumo</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-h"><h3>Días que alcanza el stock actual</h3><div class="r">'
+      + '<span class="tiny muted">la marca vertical es el punto de reorden de cada referencia</span>'
+      + '<button class="btn btn-sm" data-act="tog" data-tgt="tb-cob">Ver tabla</button></div></div>'
+      + '<div class="card-b">'
+      + conTabla('tb-cob', chCobertura(cobItems),
+          tabla([{t:'Insumo'},{t:'Cobertura (días)',n:1},{t:'Punto de reorden (días)',n:1},{t:'Estado'}],
+            cobItems.map(function(x){ return [esc(x.nom), num(x.cob,1), String(x.disparo), CHIP[x.k][1]] })))
+      + '</div></div>'
+    + '<div class="sec-t"><h2>Movimientos recientes</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-b" style="padding-top:16px">'
+      + (movs.length ? tabla([{t:'Hora'},{t:'Insumo'},{t:'Tipo'},{t:'Cantidad',n:1},{t:'Referencia'}], movs)
+        : '<div class="empty">Sin movimientos. Registre una venta o una entrada para ver el libro de asientos.</div>')
+      + '</div></div>';
+}
+
+/* ── Compras ────────────────────────────────────────────────────────────── */
+var draft = [];
+function viewCompras(){
+  var sug = alertas().map(function(a){ var s = sugerido(a.id); s.id = a.id; s.sal = a; return s })
+    .filter(function(s){ return s.paq > 0 });
+  var porProv = {};
+  sug.forEach(function(s){ var p = INS[s.id].prov; (porProv[p] = porProv[p] || []).push(s) });
+  var provs = Object.keys(porProv).sort();
+
+  var sugHtml = provs.length ? provs.map(function(p){
+    var items = porProv[p], costo = items.reduce(function(a,s){ return a+s.costo },0);
+    return '<div style="margin-bottom:18px">'
+      + '<div class="row" style="justify-content:space-between;margin-bottom:6px">'
+      + '<strong style="font-size:13.5px">'+esc(p)+'</strong>'
+      + '<span class="chip">'+items.length+' referencias · '+copK(costo)+'</span></div>'
+      + tabla([{t:''},{t:'Insumo'},{t:'Cobertura',n:1},{t:'Empaques',n:1},{t:'Cantidad',n:1},{t:'Costo estimado',n:1}],
+        items.map(function(s){ var i = INS[s.id];
+          return ['<input type="checkbox" data-sug="'+s.id+'" checked style="width:15px;height:15px;accent-color:var(--accent)">',
+            '<span class="em">'+esc(i.n)+'</span><br><span class="tiny muted">'+esc(i.emp)+'</span>',
+            (isFinite(s.sal.cob) ? num(s.sal.cob,1)+' d' : '—'), String(s.paq), qty(s.cant, i.u), cop(s.costo)] }))
+      + '</div>';
+  }).join('') : '<div class="empty">No hay sugerencias: ninguna referencia está por debajo de su punto de reorden.</div>';
+
+  var opts = INSUMOS.map(function(i){ return '<option value="'+i.id+'">'+esc(i.n)+' — '+esc(i.emp)+'</option>' }).join('');
+  var draftHtml = draft.length
+    ? tabla([{t:'Insumo'},{t:'Empaques',n:1},{t:'Cantidad',n:1},{t:'Costo',n:1},{t:''}],
+        draft.map(function(d,ix){ var i = INS[d.id];
+          return [esc(i.n), String(d.paq), qty(d.paq*i.ec, i.u), cop(d.paq*i.cost),
+            '<button class="btn btn-sm btn-gh" data-act="del-draft" data-i="'+ix+'">Quitar</button>'] }))
+    : '<div class="empty" style="padding:14px">Sin líneas. Agregue una referencia para armar la orden.</div>';
+
+  var ords = S.ordenes.slice().reverse().map(function(o){
+    var tot = o.lineas.reduce(function(a,l){ return a + l.paq*INS[l.id].cost }, 0);
+    var ch = o.estado==='recibida' ? 'chip-ok' : 'chip-warn';
+    return ['<span class="num">'+esc(o.cod)+'</span><br><span class="tiny muted">'+fecha(o.ts)+'</span>',
+      esc(o.prov), String(o.lineas.length), cop(tot),
+      '<span class="chip '+(o.origen==='sugerencia'?'chip-ac':'')+'"><span class="dot"></span>'+(o.origen==='sugerencia'?'Sugerida por el sistema':'Manual')+'</span>',
+      '<span class="chip '+ch+'"><span class="dot"></span>'+(o.estado==='recibida'?'Recibida':'Enviada')+'</span>',
+      o.estado==='recibida' ? '<span class="tiny muted">'+fecha(o.rec)+'</span>'
+        : '<button class="btn btn-sm" data-act="recibir" data-id="'+o.id+'">Registrar recepción</button>'];
+  });
+  var conSug = S.ordenes.filter(function(o){ return o.origen==='sugerencia' }).length;
+
+  return '<div class="kpis" style="margin-bottom:18px">'
+    + kpi('Sugerencias abiertas', String(sug.length), 'referencias bajo su punto de reorden', sug.length?1:0)
+    + kpi('Compra sugerida', copK(sug.reduce(function(a,s){ return a+s.costo },0)), 'cubre ' + COBERTURA_OBJ + ' días de consumo')
+    + kpi('Órdenes registradas', String(S.ordenes.length), S.ordenes.length ? conSug + ' nacieron de una sugerencia' : 'ninguna todavía')
+    + kpi('Viaje de urgencia evitado', cop(400000), 'costo del viaje adicional a Bogotá (diagnóstico 2.4)')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><h3>Sugerencia de compra</h3><div class="r">'
+      + '<span class="tiny muted">consumo de ' + WIN + ' días · cobertura objetivo ' + COBERTURA_OBJ + ' días · redondeo al empaque</span>'
+      + (provs.length ? '<button class="btn btn-pri btn-sm" data-act="crear-sug">Crear orden con lo seleccionado</button>' : '')
+      + '</div></div><div class="card-b" style="padding-top:12px">'+sugHtml+'</div></div>'
+    + '<div class="sec-t"><h2>Orden manual</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-b">'
+      + '<div class="grid" style="grid-template-columns:minmax(0,2fr) 110px auto;gap:10px;align-items:flex-end">'
+      + '<div><label class="fl" for="od-ins">Insumo</label><select id="od-ins">'+opts+'</select></div>'
+      + '<div><label class="fl" for="od-paq">Empaques</label><input id="od-paq" type="number" min="1" step="1" value="1"></div>'
+      + '<button class="btn" data-act="add-draft">Agregar</button>'
+      + '</div>'
+      + '<div style="margin-top:14px">'+draftHtml+'</div>'
+      + (draft.length ? '<div class="row" style="margin-top:12px"><button class="btn btn-pri" data-act="crear-manual">Crear orden manual</button>'
+          + '<span class="tiny muted">Queda marcada como <b>manual</b>: así el indicador OE6 distingue las órdenes que nacieron del sistema.</span></div>' : '')
+      + '</div></div>'
+    + '<div class="sec-t"><h2>Órdenes de compra</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-b" style="padding-top:16px">'
+      + (ords.length ? tabla([{t:'Orden'},{t:'Proveedor'},{t:'Líneas',n:1},{t:'Costo',n:1},{t:'Origen'},{t:'Estado'},{t:''}], ords)
+        : '<div class="empty">Sin órdenes. La recepción de una orden genera las entradas de inventario correspondientes.</div>')
+      + '</div></div>';
+}
+function crearOrden(lineas, origen){
+  if(!lineas.length){ toast('No hay líneas seleccionadas'); return }
+  var prov = INS[lineas[0].id].prov;
+  var mismo = lineas.every(function(l){ return INS[l.id].prov===prov });
+  var o = {id:'o'+Date.now(), cod:'OC-'+String(S.ordenes.length+1).padStart(3,'0'), ts:Date.now(),
+    prov: mismo ? prov : 'Varios proveedores', lineas:lineas, origen:origen, estado:'enviada'};
+  S.ordenes.push(o); draft = []; persist(); render();
+  toast('Orden ' + o.cod + ' creada (' + lineas.length + ' líneas) · registre la recepción cuando llegue');
+}
+function recibir(id){
+  var o = S.ordenes.filter(function(x){ return x.id===id })[0]; if(!o || o.estado==='recibida') return;
+  o.lineas.forEach(function(l){ var i = INS[l.id], c = l.paq*i.ec;
+    S.stock[l.id] = stock(l.id) + c;
+    S.movs.push({ts:Date.now(), id:l.id, tipo:'entrada', cant:c, ref:o.cod}) });
+  o.estado = 'recibida'; o.rec = Date.now();
+  persist(); render();
+  toast('Recepción de ' + o.cod + ' registrada · ' + o.lineas.length + ' referencias entraron al inventario');
+}
+
+/* ── Analítica ──────────────────────────────────────────────────────────── */
+function viewAnalitica(){
+  var dias = serieDias(WIN), horas = serieHoras(), tops = serieToppings(), lin = serieLineas();
+  var corte = Date.now() - WIN*864e5, vs = ventas().filter(function(v){ return v.ts>=corte });
+  var tot = suma(vs), tk = vs.length ? tot/vs.length : 0;
+  var pico = horas.filter(function(h){ return h.pk })[0];
+  var adic = 0; vs.forEach(function(v){ v.lineas.forEach(function(l){ if(l.t==='a') adic+=l.cant }) });
+  var uni = unidades(vs);
+
+  return '<div class="kpis" style="margin-bottom:18px">'
+    + kpi('Venta de ' + WIN + ' días', copK(tot), vs.length.toLocaleString('es-CO') + ' transacciones', 1)
+    + kpi('Ticket promedio', cop(tk), num(adic/Math.max(uni,1),2) + ' adiciones por producto')
+    + kpi('Franja de mayor venta', pico ? pico.h + ':00' : '—', pico ? copK(pico.v) + ' acumulados en la franja' : '')
+    + kpi('Unidades vendidas', uni.toLocaleString('es-CO'), 'helado y granizado, las cuatro líneas')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><h3>Venta diaria</h3><div class="r">'
+      + '<span class="tiny muted">últimos ' + WIN + ' días</span>'
+      + '<button class="btn btn-sm" data-act="tog" data-tgt="tb-dias">Ver tabla</button>'
+      + '<button class="btn btn-sm" data-act="csv-ventas">Exportar CSV</button></div></div>'
+      + '<div class="card-b">' + conTabla('tb-dias', chDias(dias),
+          tabla([{t:'Día'},{t:'Venta',n:1},{t:'Unidades',n:1}], dias.map(function(d){ return [esc(d.full), cop(d.v), String(d.u)] })))
+      + '</div></div>'
+    + '<div class="grid g2" style="margin-top:16px">'
+      + '<div class="card"><div class="card-h"><h3>Venta por franja horaria</h3><div class="r">'
+        + '<button class="btn btn-sm" data-act="tog" data-tgt="tb-horas">Ver tabla</button></div></div>'
+        + '<div class="card-b">' + conTabla('tb-horas', chHoras(horas),
+            tabla([{t:'Franja'},{t:'Venta',n:1},{t:'Transacciones',n:1}], horas.map(function(h){ return [esc(h.lab), cop(h.v), String(h.u)] })))
+        + '<p class="tiny muted" style="margin-top:10px">Dato que el Excel de totales no podía producir: permite decidir en qué horas vale la pena el tercer turno de mostrador.</p>'
+        + '</div></div>'
+      + '<div class="card"><div class="card-h"><h3>Mix por línea de producto</h3><div class="r">'
+        + '<button class="btn btn-sm" data-act="tog" data-tgt="tb-lin">Ver tabla</button></div></div>'
+        + '<div class="card-b">'
+        + '<div class="lg" style="margin-bottom:10px">' + lin.map(function(l){ return '<span><i style="background:'+l.color+'"></i>'+esc(l.lab)+'</span>' }).join('') + '</div>'
+        + conTabla('tb-lin', chBarrasH(lin, 'var(--s1)', function(d){ return num(d.pct,1)+' %' }),
+            tabla([{t:'Línea'},{t:'Venta',n:1},{t:'Unidades',n:1},{t:'Participación',n:1}],
+              lin.map(function(l){ return [esc(l.lab), cop(l.v), String(l.u), num(l.pct,1)+' %'] })))
+        + '<p class="tiny muted" style="margin-top:10px">El granizado aparece aquí con cifra propia: es la línea que hoy queda fuera de toda medición por no tener contador en la máquina.</p>'
+        + '</div></div>'
+    + '</div>'
+    + '<div class="card" style="margin-top:16px"><div class="card-h"><h3>Adiciones más vendidas</h3><div class="r">'
+      + '<span class="tiny muted">últimos ' + WIN + ' días</span>'
+      + '<button class="btn btn-sm" data-act="tog" data-tgt="tb-tops">Ver tabla</button></div></div>'
+      + '<div class="card-b">' + conTabla('tb-tops', chBarrasH(tops, 'var(--s1)', function(d){ return d.v.toLocaleString('es-CO') }),
+          tabla([{t:'Topping'},{t:'Adiciones',n:1},{t:'Consumo',n:1},{t:'Costo del consumo',n:1}],
+            tops.map(function(t){ var i = INS[t.id]; return [esc(t.lab), t.v.toLocaleString('es-CO'), qty(t.gramos, i.u), cop(t.gramos/i.ec*i.cost)] })))
+      + '<p class="tiny muted" style="margin-top:10px">El equipo reorganiza cantidades de topping a ojo cada día (diagnóstico 2.3). Este orden es el dato que faltaba para hacerlo con respaldo.</p>'
+      + '</div></div>';
+}
+
+/* ── Métricas ───────────────────────────────────────────────────────────── */
+function viewMetricas(){
+  var ms = metricas();
+  var filas = ms.map(function(m){
+    var tiene = m.val != null, ok = tiene && m.ok(m.val);
+    var ch = !tiene ? ['chip','Sin medir'] : ok ? ['chip-ok','En meta'] : ['chip-warn','Fuera de meta'];
+    return '<div class="mt-r">'
+      + '<div><span class="oe">'+m.oe+'</span> <span class="lab">'+esc(m.lab)+'</span>'
+      + '<div class="tiny muted" style="margin-top:2px">'+esc(m.nota)+'</div></div>'
+      + '<div class="num" style="font-size:16px;font-weight:500;color:'+(!tiene?'var(--ink-3)':ok?'var(--good)':'var(--warn)')+'">'
+        + (tiene ? esc(m.fmt(m.val)) : '—') + '</div>'
+      + '<div class="tiny muted">Línea base: '+esc(m.base)+'</div>'
+      + '<div class="tiny">Meta del piloto: <b>'+esc(m.meta)+'</b></div>'
+      + '<div><span class="chip '+ch[0]+'"><span class="dot"></span>'+ch[1]+'</span></div>'
+      + '</div>';
+  }).join('');
+  var enMeta = ms.filter(function(m){ return m.val!=null && m.ok(m.val) }).length;
+  var medidas = ms.filter(function(m){ return m.val!=null }).length;
+
+  return '<div class="kpis" style="margin-bottom:18px">'
+    + kpi('Indicadores en meta', enMeta + ' / ' + ms.length, medidas + ' con medición disponible', 1)
+    + kpi('Ventas registradas en el sistema', String(S.ventas.length), 'sin pasar por papel')
+    + kpi('Movimientos de inventario', String(S.movs.length), 'asientos auditables generados')
+    + kpi('Órdenes de compra', String(S.ordenes.length), 'con su origen trazado')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><h3>Métricas de éxito del piloto</h3>'
+      + '<div class="r"><span class="chip">capítulo 5.4 del acta</span></div></div>'
+      + '<div class="card-b" style="padding-top:6px">'+filas+'</div></div>'
+    + '<div class="grid g2" style="margin-top:16px">'
+      + '<div class="card"><div class="card-h"><h3>Capacitación del equipo</h3><div class="r"><span class="chip">OE8</span></div></div>'
+        + '<div class="card-b" style="padding-top:8px">'
+        + EQUIPO.map(function(p,ix){ return '<label class="ck"><input type="checkbox" data-cap="'+ix+'"'
+            + (S.cap.indexOf(ix)>=0?' checked':'') + '><span>'+esc(p)+'</span>'
+            + '<span class="tiny muted" style="margin-left:auto">'+(S.cap.indexOf(ix)>=0?'capacitado':'pendiente')+'</span></label>' }).join('')
+        + '<p class="tiny muted" style="margin-top:12px">La meta es el 100 % del personal operando sin acompañamiento, con manual entregado. El despliegue formal y el manual son el proceso 10 del alcance y se cierran con la Entrega 2.</p>'
+        + '</div></div>'
+      + '<div class="card"><div class="card-h"><h3>Cómo leer estas cifras</h3></div><div class="card-b">'
+        + '<ol class="ol">'
+        + '<li><span class="n">1</span><span>Las metas de OE2 y OE5 se expresan contra una línea base que el acta deja abierta: hoy KOOLT no mide tiempos de registro ni eventos de agotamiento. Lo que la aplicación hace es empezar a medirlos.</span></li>'
+        + '<li><span class="n">2</span><span>OE1 llega al 100 % por construcción: toda venta que entra por esta pantalla queda registrada. El indicador real del piloto es el <b>denominador</b> —que las ventas del turno entren aquí y no en el papel— y eso lo valida el conteo físico y el contraste contra el contador de la máquina.</span></li>'
+        + '<li><span class="n">3</span><span>OE7 se reporta en 80 %: los reportes por producto, topping, día y franja horaria están en línea; el de estacionalidad exige al menos un mes de operación piloto (sección 5.3).</span></li>'
+        + '<li><span class="n">4</span><span>Las cifras de los ' + DIAS_DEMO + ' días previos son un histórico reconstruido para que la analítica tenga sobre qué reportar antes del primer día de piloto. Lo registrado desde esta pantalla es real y se distingue en los contadores de arriba.</span></li>'
+        + '</ol></div></div>'
+    + '</div>';
+}
+
+/* ── Catálogo y recetas ─────────────────────────────────────────────────── */
+function viewCatalogo(){
+  var prods = PRODUCTOS.map(function(p){
+    var rec = p.r.map(function(x){ return esc(INS[x.i].n) + ' <span class="muted">' + qty(x.c, INS[x.i].u) + '</span>' }).join(' · ');
+    var costo = p.r.reduce(function(a,x){ return a + x.c/INS[x.i].ec*INS[x.i].cost }, 0);
+    var mg = (precio(p.id)-costo)/precio(p.id)*100;
+    return ['<span class="em">'+esc(p.n)+'</span>'+(p.tmp?' <span class="chip chip-ac"><span class="dot"></span>temporada</span>':'')
+        +'<br><span class="tiny muted">'+esc(p.z)+' · '+esc(p.linea)+'</span>',
+      '<input type="number" step="100" min="0" data-precio="'+p.id+'" value="'+precio(p.id)+'" style="width:104px">',
+      cop(costo), '<span style="color:'+(mg>=60?'var(--good)':'var(--warn)')+'">'+num(mg,1)+' %</span>',
+      '<span class="tiny">'+rec+'</span>'];
+  });
+  var ins = INSUMOS.map(function(i){
+    return ['<span class="em">'+esc(i.n)+'</span><br><span class="tiny muted">'+esc(i.prov)+'</span>',
+      i.u, esc(i.emp), cop(i.cost), i.lead + ' d',
+      '<input type="number" step="any" min="0" data-min="'+i.id+'" value="'+minimo(i.id)+'" style="width:94px">',
+      i.top ? cop(i.pa) + ' <span class="tiny muted">/ ' + i.por + ' ' + i.u + '</span>' : '<span class="muted">—</span>'];
+  });
+  return '<div class="note note-ac" style="margin-bottom:18px"><svg><use href="#i-info"/></svg><div>'
+    + 'La receta es la pieza que convierte una venta en un movimiento de inventario. Cambiar una cantidad aquí cambia el consumo proyectado, el punto de reorden y la sugerencia de compra de ese insumo: por eso la receta es una entidad del modelo de datos y no una hoja de cálculo aparte.'
+    + '</div></div>'
+    + '<div class="card"><div class="card-h"><h3>Productos, precio y receta</h3><div class="r">'
+      + '<span class="tiny muted">el margen descuenta el costo de los ingredientes y de los insumos de servicio</span></div></div>'
+      + '<div class="card-b" style="padding-top:8px">'
+      + tabla([{t:'Producto'},{t:'Precio',n:1},{t:'Costo de receta',n:1},{t:'Margen',n:1},{t:'Consume por unidad'}], prods)
+      + '</div></div>'
+    + '<div class="sec-t"><h2>Insumos</h2><div class="l"></div></div>'
+    + '<div class="card"><div class="card-b" style="padding-top:16px">'
+      + tabla([{t:'Insumo'},{t:'Unidad'},{t:'Empaque'},{t:'Costo del empaque',n:1},{t:'Entrega',n:1},{t:'Mínimo',n:1},{t:'Precio de adición',n:1}], ins)
+      + '</div></div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. HELPERS DE UI
+   ══════════════════════════════════════════════════════════════════════════ */
+function kpi(k, v, f, ac){
+  return '<div class="kpi'+(ac?' kpi-ac':'')+'"><span class="k">'+esc(k)+'</span>'
+    + '<span class="v">'+v+'</span>' + (f ? '<span class="f">'+f+'</span>' : '') + '</div>';
+}
+var toastT = null;
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(function(){ el.classList.remove('on') }, 4200);
+}
+function csv(rows){
+  return rows.map(function(r){ return r.map(function(c){
+    var s = String(c==null?'':c);
+    return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s }).join(';') }).join('\r\n');
+}
+function descargar(nombre, texto){
+  if(!CAP.downloads){ toast('La descarga no está disponible en esta vista. El contenido se construyó igual: pídamelo y lo entrego aparte.'); return }
+  CAP.downloads.save({filename:nombre, data:'﻿'+texto}).then(function(){ toast('Archivo ' + nombre + ' entregado') })
+    .catch(function(e){ toast(e && e.code==='declined' ? 'Descarga cancelada' : 'No se pudo entregar el archivo') });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10. ENRUTADOR Y RENDERIZADO
+   ══════════════════════════════════════════════════════════════════════════ */
+const ORDEN = ['pos','cierre','inventario','compras','analitica','metricas','catalogo'];
+const MOSTRADOR = {pos:1, cierre:1};
+const RENDER = {pos:viewPos, cierre:viewCierre, inventario:viewInv, compras:viewCompras,
+  analitica:viewAnalitica, metricas:viewMetricas, catalogo:viewCatalogo};
+var vista = 'pos', tmrI = null;
+
+function permitida(v){ return VIEWS[v] && (S.rol==='admin' || MOSTRADOR[v]) }
+function ruta(){
+  var h = (location.hash||'').replace('#','');
+  return permitida(h) ? h : (permitida(vista) ? vista : 'pos');
+}
+function render(){
+  vista = ruta();
+  var meta = VIEWS[vista];
+  document.getElementById('tb-eye').textContent = meta.eye;
+  document.getElementById('tb-title').textContent = meta.t;
+  document.getElementById('tb-sub').textContent = meta.sub;
+
+  ORDEN.forEach(function(v){
+    var el = document.getElementById('v-'+v);
+    if(!el) return;
+    if(v === vista){
+      if(RENDER[v]) el.innerHTML = RENDER[v]();
+      el.hidden = false;
+    } else {
+      if(RENDER[v]) el.innerHTML = '';
+      el.hidden = true;
+    }
+  });
+
+  document.querySelectorAll('.nav a').forEach(function(a){
+    var v = a.getAttribute('data-v');
+    if(v === vista) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    a.hidden = !permitida(v);
+  });
+  document.querySelectorAll('.nav [data-role="admin"]').forEach(function(e){
+    if(e.classList.contains('nav-g')) e.hidden = S.rol !== 'admin';
+  });
+  var al = alertas().length, nb = document.getElementById('nb-inv');
+  nb.hidden = !al || S.rol !== 'admin'; nb.textContent = al;
+
+  var mn = document.getElementById('mn-scroll');
+  mn.innerHTML = ORDEN.filter(permitida).map(function(v){
+    return '<a href="#'+v+'" data-v="'+v+'"'+(v===vista?' aria-current="page"':'')+'>'+esc(VIEWS[v].t)+'</a>' }).join('');
+
+  var acc = document.getElementById('tb-actions');
+  acc.innerHTML = vista==='analitica' || vista==='metricas'
+    ? '<div class="seg" role="group" aria-label="Datos de demostración">'
+      + '<button data-act="demo" data-on="1" aria-pressed="'+(S.demo?'true':'false')+'">Con histórico de demo</button>'
+      + '<button data-act="demo" data-on="0" aria-pressed="'+(S.demo?'false':'true')+'">Solo datos reales</button></div>'
+    : vista==='pos'
+      ? '<span class="chip chip-ac"><span class="dot"></span>'+(S.rol==='admin'?'Sebastián':'Turno de mostrador')+'</span>'
+        + '<span class="chip">'+folio(S.folio)+' registradas</span>'
+      : '';
+
+  document.getElementById('sel-rol').value = S.rol;
+  document.getElementById('sel-rol-m').value = S.rol;
+
+  clearInterval(tmrI);
+  if(vista === 'pos'){ tmrI = setInterval(latido, 120); ctSis() }
+  if(vista === 'inventario') ctSis();
+  tips();
+}
+function latido(){
+  var el = document.getElementById('tmr');
+  if(!el || !tick.t0){ return }
+  var s = (Date.now()-tick.t0)/1000;
+  el.innerHTML = '<span style="width:6px;height:6px;border-radius:99px;background:'
+    + (s<=META.seg?'var(--good)':'var(--warn)') + '"></span><b>' + num(s,1) + ' s</b> desde el primer toque'
+    + (s<=META.seg ? ' · dentro de la meta de ' + META.seg + ' s' : ' · por encima de la meta de ' + META.seg + ' s');
+}
+function ctSis(){
+  var sel = document.getElementById('ct-ins'), out = document.getElementById('ct-sis');
+  if(!sel || !out) return;
+  var i = INS[sel.value]; out.textContent = i ? qty(stock(i.id), i.u) : '—';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11. INTERACCIÓN
+   ══════════════════════════════════════════════════════════════════════════ */
+function addLinea(t, ref, precioU){
+  if(!tick.t0) tick.t0 = Date.now();
+  var ex = tick.lineas.filter(function(l){ return l.t===t && l.ref===ref })[0];
+  if(ex) ex.cant++; else tick.lineas.push({t:t, ref:ref, cant:1, precio:precioU});
+}
+
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-act]');
+  if(!b) return;
+  var a = b.getAttribute('data-act');
+
+  if(a==='add-p'){ var p = PRO[b.getAttribute('data-id')]; addLinea('p', p.id, precio(p.id)); render(); return }
+  if(a==='add-a'){ var t = INS[b.getAttribute('data-id')]; addLinea('a', t.id, t.pa); render(); return }
+  if(a==='del-l'){ var ix = +b.getAttribute('data-i'); var l = tick.lineas[ix];
+    if(l.cant>1) l.cant--; else tick.lineas.splice(ix,1);
+    if(!tick.lineas.length) tick.t0 = 0;
+    render(); return }
+  if(a==='pago'){ tick.pago = b.getAttribute('data-p'); render(); return }
+  if(a==='cobrar'){ cobrar(); return }
+  if(a==='cancelar'){ tick = {lineas:[], pago:tick.pago, t0:0}; render(); toast('Venta cancelada'); return }
+  if(a==='cerrar'){ generarCierre(); return }
+
+  if(a==='tog'){ var el = document.getElementById(b.getAttribute('data-tgt'));
+    el.hidden = !el.hidden; b.textContent = el.hidden ? 'Ver tabla' : 'Ocultar tabla'; return }
+
+  if(a==='pre-mov'){ location.hash = '#inventario';
+    var s = document.getElementById('mv-ins'); if(s){ s.value = b.getAttribute('data-id'); s.focus(); s.scrollIntoView({block:'center', behavior:'smooth'}) } return }
+  if(a==='pre-ct'){ var s2 = document.getElementById('ct-ins'); if(s2){ s2.value = b.getAttribute('data-id'); ctSis(); s2.focus(); s2.scrollIntoView({block:'center', behavior:'smooth'}) } return }
+
+  if(a==='mov'){
+    var id = document.getElementById('mv-ins').value, tipo = document.getElementById('mv-tipo').value;
+    var c = Number(document.getElementById('mv-cant').value), nota = document.getElementById('mv-nota').value.trim();
+    if(!(c > 0)){ toast('Indique una cantidad mayor que cero'); return }
+    var i = INS[id], delta = tipo==='entrada' ? c : -c;
+    S.stock[id] = Math.max(0, stock(id) + delta);
+    S.movs.push({ts:Date.now(), id:id, tipo:tipo, cant:delta, ref:nota || (tipo==='entrada'?'reposición':'sin nota')});
+    if(S.movs.length > 400) S.movs = S.movs.slice(-400);
+    persist(); render();
+    toast(({entrada:'Entrada',merma:'Merma',ajuste:'Ajuste'}[tipo]) + ' de ' + qty(c, i.u) + ' en ' + i.n + ' · stock ahora ' + qty(stock(id), i.u));
+    return }
+
+  if(a==='conteo'){
+    var cid = document.getElementById('ct-ins').value, fis = Number(document.getElementById('ct-cant').value);
+    var inf = INS[cid], sis = stock(cid);
+    if(!(fis >= 0) || document.getElementById('ct-cant').value === ''){ toast('Indique la cantidad contada'); return }
+    var desv = sis > 0 ? (fis - sis)/sis*100 : (fis > 0 ? 100 : 0);
+    S.conteos.push({ts:Date.now(), id:cid, sis:sis, fis:fis, desvPct:desv});
+    S.stock[cid] = fis;
+    S.movs.push({ts:Date.now(), id:cid, tipo:'conteo', cant:fis - sis, ref:'desviación ' + num(desv,1) + ' %'});
+    persist(); render();
+    toast('Conteo de ' + inf.n + ' registrado · desviación de ' + num(desv,1) + ' % frente al sistema');
+    return }
+
+  if(a==='ir-compras'){ location.hash = '#compras'; return }
+  if(a==='crear-sug'){
+    var ls = [].slice.call(document.querySelectorAll('[data-sug]')).filter(function(c){ return c.checked })
+      .map(function(c){ return {id:c.getAttribute('data-sug'), paq:sugerido(c.getAttribute('data-sug')).paq} })
+      .filter(function(l){ return l.paq > 0 });
+    crearOrden(ls, 'sugerencia'); return }
+  if(a==='add-draft'){
+    var did = document.getElementById('od-ins').value, pq = Math.round(Number(document.getElementById('od-paq').value));
+    if(!(pq > 0)){ toast('Indique al menos un empaque'); return }
+    var prev = draft.filter(function(d){ return d.id===did })[0];
+    if(prev) prev.paq += pq; else draft.push({id:did, paq:pq});
+    render(); return }
+  if(a==='del-draft'){ draft.splice(+b.getAttribute('data-i'), 1); render(); return }
+  if(a==='crear-manual'){ crearOrden(draft.slice(), 'manual'); return }
+  if(a==='recibir'){ recibir(b.getAttribute('data-id')); return }
+
+  if(a==='demo'){ S.demo = b.getAttribute('data-on')==='1'; persist(); render(); return }
+
+  if(a==='csv-ventas'){
+    var rows = [['folio','fecha','hora','linea','tipo','descripcion','cantidad','precio_unitario','total_linea','medio_pago','origen']];
+    ventas().slice().sort(function(x,y){ return x.ts-y.ts }).forEach(function(v){
+      v.lineas.forEach(function(l, ix){
+        var nom = l.t==='p' ? PRO[l.ref].n + ' ' + PRO[l.ref].z : INS[l.ref].n;
+        var d = new Date(v.ts);
+        rows.push([v.folio ? folio(v.folio) : 'histórico',
+          d.toISOString().slice(0,10), hhmm(v.ts), ix+1, l.t==='p'?'producto':'adicion', nom,
+          l.cant, l.precio, l.precio*l.cant, v.pago, v.demo ? 'histórico de demostración' : 'registrada en el sistema']);
+      });
+    });
+    descargar('koolt-ventas.csv', csv(rows)); return }
+  if(a==='csv-cierres'){
+    var r2 = [['fecha','transacciones','total','unidades_helado','unidades_granizado','contador_maquina','diferencia','generado_en_ms','origen']];
+    cierres().slice().sort(function(x,y){ return x.t0-y.t0 }).forEach(function(c){
+      r2.push([new Date(c.t0).toISOString().slice(0,10), c.n, c.total, c.uniHel, c.uniGra,
+        c.contador==null?'':c.contador, c.dif==null?'':c.dif, Math.round(c.ms),
+        c.demo?'histórico de demostración':'generado en el sistema']) });
+    if(r2.length===1){ toast('Todavía no hay cierres para exportar'); return }
+    descargar('koolt-cierres.csv', csv(r2)); return }
+});
+
+document.addEventListener('change', function(ev){
+  var t = ev.target;
+  if(t.id==='sel-rol' || t.id==='sel-rol-m'){
+    S.rol = t.value; persist();
+    if(!permitida(vista)) location.hash = '#pos';
+    render(); return;
+  }
+  if(t.id==='ct-ins'){ ctSis(); return }
+  if(t.hasAttribute('data-precio')){
+    var v = Math.round(Number(t.value));
+    if(v > 0){ S.precios[t.getAttribute('data-precio')] = v; persist(); render(); toast('Precio actualizado') }
+    return;
+  }
+  if(t.hasAttribute('data-min')){
+    var m = Number(t.value);
+    if(m >= 0){ S.min[t.getAttribute('data-min')] = m; persist(); render(); toast('Mínimo actualizado') }
+    return;
+  }
+  if(t.hasAttribute('data-cap')){
+    var ix = +t.getAttribute('data-cap'), p = S.cap.indexOf(ix);
+    if(t.checked && p < 0) S.cap.push(ix); else if(!t.checked && p >= 0) S.cap.splice(p,1);
+    persist(); render(); return;
+  }
+});
+
+window.addEventListener('hashchange', render);
+
+/* ── Tooltips de los gráficos ───────────────────────────────────────────── */
+function tips(){
+  document.querySelectorAll('.ch').forEach(function(ch){
+    if(ch.dataset.wired) return; ch.dataset.wired = '1';
+    var tip = ch.querySelector('.tip');
+    ch.addEventListener('pointermove', function(ev){
+      var host = ev.target.closest('[data-tip]');
+      if(!host){ tip.classList.remove('on'); return }
+      tip.innerHTML = host.getAttribute('data-tip');
+      var box = ch.getBoundingClientRect(), svg = ch.querySelector('svg').getBoundingClientRect();
+      var vb = ch.querySelector('svg').viewBox.baseVal, k = svg.width/vb.width;
+      var tx = host.getAttribute('data-tx'), ty = host.getAttribute('data-ty');
+      var x = tx != null ? (+tx)*k + (svg.left-box.left) : ev.clientX-box.left;
+      var y = ty != null ? (+ty)*k + (svg.top-box.top) : ev.clientY-box.top;
+      tip.style.left = Math.max(70, Math.min(box.width-70, x)) + 'px';
+      tip.style.top = Math.max(26, y) + 'px';
+      tip.classList.add('on');
+    });
+    ch.addEventListener('pointerleave', function(){ tip.classList.remove('on') });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12. ARRANQUE — local primero; las capacidades del visor se suman después
+   ══════════════════════════════════════════════════════════════════════════ */
+var CAP = {downloads:null, db:null, user:null};
+function setSync(on, tx){
+  var el = document.getElementById('sync');
+  el.classList.toggle('live', !!on);
+  document.getElementById('sync-tx').textContent = tx;
+}
+
+loadLocal();
+if(!location.hash || !permitida(location.hash.replace('#',''))) location.hash = '#pos';
+render();
+
+if(window.claude && window.claude.use){
+  window.claude.use('downloads').then(function(d){ CAP.downloads = d }).catch(function(){});
+  window.claude.use('db').then(function(d){
+    if(!d) return;
+    CAP.db = d; dbRef = d.doc('operacion/estado');
+    setSync(true, 'Sincronizado entre dispositivos');
+    dbRef.onSnapshot(function(snap){
+      if(!snap.exists || suppress) return;
+      var r = snap.data();
+      if(r && r.v === 1 && (r.updatedAt||0) > (S.updatedAt||0)){
+        S = Object.assign(defState(), r);
+        try{ localStorage.setItem(LS, JSON.stringify(S)) }catch(e){}
+        _cons = null; render();
+      }
+    }, function(){ setSync(false, 'Sin sincronización — solo este dispositivo') });
+  }).catch(function(){});
+}
+})();
+</script>

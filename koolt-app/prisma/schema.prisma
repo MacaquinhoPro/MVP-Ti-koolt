@@ -1,0 +1,191 @@
+// Modelo de datos de KOOLT — ventas, inventario y compras.
+//
+// Dos decisiones gobiernan este esquema:
+//
+//  1. VentaLinea apunta a un Producto o a un Insumo según su `tipo`. Así un
+//     topping es a la vez una adición vendida con precio y una referencia de
+//     inventario que se descuenta, sin mantener dos catálogos sincronizados.
+//  2. Movimiento es un libro de asientos. `Insumo.stock` es un acumulado de
+//     velocidad para la pantalla de venta; los movimientos son la auditoría.
+//     Por eso un conteo físico no corrige el stock en silencio: deja un
+//     movimiento de tipo "conteo" con su desviación, que es lo que mide OE3.
+//
+// Los montos están en pesos colombianos enteros. Las cantidades son Float
+// porque el inventario se maneja en la unidad base del insumo (L, kg, g, und).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // PostgreSQL en local y en producción: un solo esquema, un solo comportamiento.
+  // En Vercel el sistema de archivos de las funciones es de solo lectura, así que
+  // SQLite en archivo no es una opción — cada venta escribe en la base.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id         String  @id
+  nombre     String
+  rol        String // "mostrador" | "admin"
+  activo     Boolean @default(true)
+  capacitado Boolean @default(false) // base del indicador OE8
+
+  ventas Venta[]
+}
+
+model Producto {
+  id        String  @id
+  nombre    String
+  tamano    String
+  linea     String // Temporada | Vainilla | Mixto | Granizado
+  precio    Int
+  temporada Boolean @default(false)
+  activo    Boolean @default(true)
+  orden     Int     @default(0)
+
+  receta Receta[]
+  lineas VentaLinea[]
+}
+
+model Insumo {
+  id            String  @id
+  nombre        String
+  unidad        String // L | kg | g | und
+  stock         Float   @default(0)
+  minimo        Float   @default(0)
+  empaque       String
+  contenido     Float // unidades base por empaque
+  costoEmpaque  Int
+  diasEntrega   Int
+  margenAlerta  Int     @default(10) // días de anticipación exigidos (OE4)
+  proveedor     String
+  esTopping     Boolean @default(false)
+  porcion       Float? // gramos que consume una adición
+  precioAdicion Int?
+  orden         Int     @default(0)
+
+  receta       Receta[]
+  movimientos  Movimiento[]
+  lineasVenta  VentaLinea[]
+  lineasOrden  OrdenLinea[]
+  conteos      Conteo[]
+  agotamientos EventoAgotamiento[]
+}
+
+model Receta {
+  id         String @id @default(cuid())
+  productoId String
+  insumoId   String
+  cantidad   Float
+
+  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  insumo   Insumo   @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, insumoId])
+}
+
+model Venta {
+  id         String   @id @default(cuid())
+  folio      Int      @unique
+  fechaHora  DateTime @default(now())
+  usuarioId  String
+  medioPago  String
+  total      Int
+  duracionMs Int      @default(0)
+  demo       Boolean  @default(false)
+
+  usuario Usuario      @relation(fields: [usuarioId], references: [id])
+  lineas  VentaLinea[]
+
+  @@index([fechaHora])
+}
+
+model VentaLinea {
+  id             String @id @default(cuid())
+  ventaId        String
+  tipo           String // "producto" | "adicion"
+  productoId     String?
+  insumoId       String?
+  cantidad       Int
+  precioUnitario Int
+
+  venta    Venta     @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto Producto? @relation(fields: [productoId], references: [id])
+  insumo   Insumo?   @relation(fields: [insumoId], references: [id])
+
+  @@index([ventaId])
+}
+
+model Movimiento {
+  id        String   @id @default(cuid())
+  insumoId  String
+  tipo      String // venta | entrada | merma | ajuste | conteo
+  cantidad  Float // con signo: negativo descuenta
+  referencia String
+  fechaHora DateTime @default(now())
+
+  insumo Insumo @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+
+  @@index([fechaHora])
+  @@index([insumoId])
+}
+
+model OrdenCompra {
+  id        String    @id @default(cuid())
+  codigo    String    @unique
+  proveedor String
+  origen    String // "sugerencia" | "manual"  → base del indicador OE6
+  estado    String // "enviada" | "recibida"
+  creada    DateTime  @default(now())
+  recibida  DateTime?
+
+  lineas OrdenLinea[]
+}
+
+model OrdenLinea {
+  id       String @id @default(cuid())
+  ordenId  String
+  insumoId String
+  empaques Int
+  cantidad Float
+  costo    Int
+
+  orden  OrdenCompra @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  insumo Insumo      @relation(fields: [insumoId], references: [id])
+}
+
+model CierreDiario {
+  id              String   @id @default(cuid())
+  fecha           DateTime @unique // medianoche local del día cerrado
+  transacciones   Int
+  total           Int
+  unidadesHelado  Int
+  unidadesGranizado Int
+  contadorMaquina Int?
+  diferencia      Int?
+  generadoEnMs    Int
+  demo            Boolean  @default(false)
+  creado          DateTime @default(now())
+}
+
+model Conteo {
+  id            String   @id @default(cuid())
+  insumoId      String
+  fechaHora     DateTime @default(now())
+  segunSistema  Float
+  conteoFisico  Float
+  desviacionPct Float
+
+  insumo Insumo @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+}
+
+model EventoAgotamiento {
+  id        String   @id @default(cuid())
+  insumoId  String
+  fechaHora DateTime @default(now())
+  referencia String
+
+  insumo Insumo @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+}
