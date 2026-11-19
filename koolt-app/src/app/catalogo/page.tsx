@@ -18,16 +18,14 @@ export default async function PaginaCatalogo() {
   return (
     <>
       <Encabezado
-        eyebrow="Procesos 3 y 4 · maestros"
         titulo="Catálogo y recetas"
         sub="Productos, precios y la receta que define cuánto consume cada presentación. Sin receta no hay descuento automático de inventario."
       />
 
       <div style={{ marginBottom: 18 }}>
         <Aviso acento>
-          La receta es la pieza que convierte una venta en un movimiento de inventario. Cambiar una cantidad aquí
-          cambia el consumo proyectado, el punto de reorden y la sugerencia de compra de ese insumo: por eso es una
-          entidad del modelo de datos y no una hoja de cálculo aparte.
+          La receta convierte cada venta en un descuento de inventario. Cambiar una cantidad aquí ajusta el consumo
+          proyectado, el punto de reorden y la sugerencia de compra de ese insumo.
         </Aviso>
       </div>
 
@@ -96,10 +94,9 @@ export default async function PaginaCatalogo() {
         />
         <div style={{ marginTop: 14 }}>
           <Aviso>
-            La columna <b>Alerta</b> es el margen de anticipación que exige cada referencia. Los insumos de compra
-            programada en Bogotá usan los 10 días del objetivo OE4; la leche, el hielo y la fruta de plaza usan un
-            margen corto porque se compran cada dos o tres días por diseño — pedirles 10 días las dejaría en alerta
-            permanente.
+            La columna <b>Alerta</b> indica cuántos días antes del agotamiento proyectado avisa el sistema. Los
+            insumos que llegan de Bogotá usan 10 días; la leche, el hielo y la fruta de plaza usan un margen corto
+            porque se compran cada dos o tres días.
           </Aviso>
         </div>
       </Card>

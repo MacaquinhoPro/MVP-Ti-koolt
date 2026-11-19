@@ -4,7 +4,7 @@ import { generarCierre } from '@/dominio/cierre';
 import { duracion, fechaLarga } from '@/lib/formato';
 
 export async function POST(req: Request) {
-  return manejar(async () => {
+  return manejar('equipo', async () => {
     const { contadorMaquina } = await req.json();
     const valor =
       contadorMaquina === null || contadorMaquina === '' || contadorMaquina === undefined

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
+import { Card } from './ui';
 import { cop, copCorto, dec } from '@/lib/formato';
 import type { PuntoDia, PuntoHora, PuntoTopping, PuntoLinea } from '@/dominio/reportes';
 import { cantidad as fmtCantidad } from '@/lib/formato';
@@ -23,13 +24,36 @@ type MarcaZona = {
   contenido: ReactNode;
 };
 
+/**
+ * Ancho real del contenedor en píxeles. El viewBox se dibuja a esa medida para
+ * que las etiquetas conserven su tamaño de fuente en cualquier columna, en vez
+ * de escalarse con la tarjeta.
+ */
+function useAncho(base = 700) {
+  const [ancho, setAncho] = useState(base);
+  const caja = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setAncho(Math.max(280, Math.round(e.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [caja, ancho] as const;
+}
+
+function SinDatos({ children }: { children: ReactNode }) {
+  return <div className="ch-vacio">{children}</div>;
+}
+
 function Lienzo({
-  ancho, alto, etiqueta, marcas, children,
-}: { ancho: number; alto: number; etiqueta: string; marcas: MarcaZona[]; children: ReactNode }) {
+  caja, ancho, alto, etiqueta, marcas, children,
+}: {
+  caja: (el: HTMLDivElement | null) => void;
+  ancho: number; alto: number; etiqueta: string; marcas: MarcaZona[]; children: ReactNode;
+}) {
   const [activa, setActiva] = useState<number | null>(null);
   const m = activa == null ? null : marcas[activa];
   return (
-    <div className="ch" onPointerLeave={() => setActiva(null)}>
+    <div className="ch" ref={caja} onPointerLeave={() => setActiva(null)}>
       <svg viewBox={`0 0 ${ancho} ${alto}`} role="img" aria-label={etiqueta}>
         {children}
         {marcas.map((mk, i) => (
@@ -69,9 +93,12 @@ function topeRedondeado(x: number, y: number, w: number, h: number, r = 4) {
 
 /* ── Venta diaria ───────────────────────────────────────────────────────── */
 export function GraficoDias({ dias }: { dias: PuntoDia[] }) {
-  const W = 700, H = 212, PL = 52, PR = 10, PT = 14, PB = 28;
+  const [caja, W] = useAncho();
+  if (!dias.some((d) => d.monto > 0)) return <SinDatos>Todavía no hay ventas en la ventana. La curva aparece con la primera venta registrada.</SinDatos>;
+  const H = 232, PL = 52, PR = 10, PT = 14, PB = 28;
   const pw = W - PL - PR, ph = H - PT - PB;
   const max = escalaBonita(Math.max(...dias.map((d) => d.monto)) * 1.08) || 1;
+  const cada = W < 520 ? 4 : 3;
   const n = dias.length, dx = n > 1 ? pw / (n - 1) : 0;
   const X = (i: number) => PL + i * dx;
   const Y = (v: number) => PT + ph - (v / max) * ph;
@@ -87,7 +114,7 @@ export function GraficoDias({ dias }: { dias: PuntoDia[] }) {
   }));
 
   return (
-    <Lienzo ancho={W} alto={H} etiqueta={`Venta diaria de los últimos ${n} días, en pesos`} marcas={marcas}>
+    <Lienzo caja={caja} ancho={W} alto={H} etiqueta={`Venta diaria de los últimos ${n} días, en pesos`} marcas={marcas}>
       {[0, 1, 2, 3, 4].map((i) => {
         const v = (max * i) / 4, y = Y(v);
         return (
@@ -97,12 +124,18 @@ export function GraficoDias({ dias }: { dias: PuntoDia[] }) {
           </g>
         );
       })}
-      <path d={area} fill="var(--s1)" opacity={0.12} />
+      <defs>
+        <linearGradient id="g-dias" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--s1)" stopOpacity={0.18} />
+          <stop offset="1" stopColor="var(--s1)" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#g-dias)" />
       <path d={linea} fill="none" stroke="var(--s1)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={X(n - 1)} cy={Y(ultimo.monto)} r={4.5} fill="var(--s1)" stroke="var(--surface)" strokeWidth={2} />
       <text className="dl" x={X(n - 1) - 6} y={Y(ultimo.monto) - 11} textAnchor="end">{copCorto(ultimo.monto)}</text>
       {dias.map((d, i) =>
-        i % 3 === 0 || i === n - 1 ? (
+        (i % cada === 0 && n - 1 - i >= cada / 2) || i === n - 1 ? (
           <text key={i} className="ax" x={X(i)} y={H - 9} textAnchor="middle">{d.etiqueta}</text>
         ) : null,
       )}
@@ -112,10 +145,12 @@ export function GraficoDias({ dias }: { dias: PuntoDia[] }) {
 
 /* ── Franja horaria ─────────────────────────────────────────────────────── */
 export function GraficoHoras({ horas }: { horas: PuntoHora[] }) {
-  const W = 700, H = 196, PL = 52, PR = 10, PT = 12, PB = 28;
+  const [caja, W] = useAncho();
+  if (!horas.some((h) => h.monto > 0)) return <SinDatos>Sin ventas para repartir por franja horaria.</SinDatos>;
+  const H = 200, PL = 52, PR = 10, PT = 12, PB = 28;
   const pw = W - PL - PR, ph = H - PT - PB;
   const max = escalaBonita(Math.max(...horas.map((h) => h.monto)) * 1.1) || 1;
-  const banda = pw / horas.length, bw = Math.max(banda - 9, 6);
+  const banda = pw / horas.length, bw = Math.max(Math.min(banda * 0.68, 34), 6);
 
   const marcas: MarcaZona[] = horas.map((h, i) => {
     const alt = (h.monto / max) * ph;
@@ -128,7 +163,7 @@ export function GraficoHoras({ horas }: { horas: PuntoHora[] }) {
   });
 
   return (
-    <Lienzo ancho={W} alto={H} etiqueta="Venta acumulada por franja horaria; la franja de mayor venta está resaltada" marcas={marcas}>
+    <Lienzo caja={caja} ancho={W} alto={H} etiqueta="Venta acumulada por franja horaria; la franja de mayor venta está resaltada" marcas={marcas}>
       {[0, 1, 2, 3].map((i) => {
         const v = (max * i) / 3, y = PT + ph - (v / max) * ph;
         return (
@@ -143,7 +178,7 @@ export function GraficoHoras({ horas }: { horas: PuntoHora[] }) {
         const x = PL + i * banda + (banda - bw) / 2;
         return (
           <g key={h.hora}>
-            <path d={topeRedondeado(x, PT + ph - alt, bw, alt)} fill={h.pico ? 'var(--s1)' : 'var(--s2)'} />
+            <path d={topeRedondeado(x, PT + ph - alt, bw, alt)} fill={h.pico ? 'var(--s1)' : 'var(--s1-soft)'} />
             <text className="ax" x={PL + i * banda + banda / 2} y={H - 9} textAnchor="middle">{h.hora}</text>
           </g>
         );
@@ -154,7 +189,9 @@ export function GraficoHoras({ horas }: { horas: PuntoHora[] }) {
 
 /* ── Barras horizontales ────────────────────────────────────────────────── */
 export function GraficoToppings({ toppings }: { toppings: PuntoTopping[] }) {
-  const W = 700, rh = 27, PLab = 168, PR = 96, PT = 4;
+  const [caja, W] = useAncho();
+  if (!toppings.some((t) => t.adiciones > 0)) return <SinDatos>Ninguna adición vendida en la ventana.</SinDatos>;
+  const rh = 30, PLab = Math.min(168, W * 0.36), PR = 56, PT = 4;
   const pw = W - PLab - PR, H = PT + toppings.length * rh + 6;
   const max = Math.max(...toppings.map((t) => t.adiciones)) || 1;
 
@@ -168,14 +205,15 @@ export function GraficoToppings({ toppings }: { toppings: PuntoTopping[] }) {
   });
 
   return (
-    <Lienzo ancho={W} alto={H} etiqueta="Adiciones más vendidas, de mayor a menor, con el valor al final de cada barra" marcas={marcas}>
+    <Lienzo caja={caja} ancho={W} alto={H} etiqueta="Adiciones más vendidas, de mayor a menor, con el valor al final de cada barra" marcas={marcas}>
       {toppings.map((t, i) => {
         const y = PT + i * rh, bw = Math.max((t.adiciones / max) * pw, 2);
         return (
           <g key={t.insumoId}>
-            <text className="axl" x={0} y={y + 14}>{t.nombre}</text>
-            <path d={extremoRedondeado(PLab, y + 3, bw, 13)} fill="var(--s1)" />
-            <text className="dl" x={PLab + bw + 9} y={y + 14}>{t.adiciones.toLocaleString('es-CO')}</text>
+            <text className="axl" x={0} y={y + 15}>{t.nombre}</text>
+            <rect x={PLab} y={y + 4} width={pw} height={14} rx={4} className="pista" />
+            <path d={extremoRedondeado(PLab, y + 4, bw, 14)} fill={i < 3 ? 'var(--s1)' : 'var(--s1-soft)'} />
+            <text className="dl" x={PLab + bw + 9} y={y + 15}>{t.adiciones.toLocaleString('es-CO')}</text>
           </g>
         );
       })}
@@ -184,7 +222,9 @@ export function GraficoToppings({ toppings }: { toppings: PuntoTopping[] }) {
 }
 
 export function GraficoLineas({ lineas }: { lineas: PuntoLinea[] }) {
-  const W = 700, rh = 29, PLab = 120, PR = 86, PT = 4;
+  const [caja, W] = useAncho();
+  if (!lineas.some((l) => l.monto > 0)) return <SinDatos>Sin ventas para calcular el mix por línea.</SinDatos>;
+  const rh = 34, PLab = 92, PR = 64, PT = 4;
   const pw = W - PLab - PR, H = PT + lineas.length * rh + 6;
   const max = Math.max(...lineas.map((l) => l.monto)) || 1;
   const color = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'];
@@ -199,14 +239,15 @@ export function GraficoLineas({ lineas }: { lineas: PuntoLinea[] }) {
   });
 
   return (
-    <Lienzo ancho={W} alto={H} etiqueta="Participación de cada línea de producto en la venta" marcas={marcas}>
+    <Lienzo caja={caja} ancho={W} alto={H} etiqueta="Participación de cada línea de producto en la venta" marcas={marcas}>
       {lineas.map((l, i) => {
         const y = PT + i * rh, bw = Math.max((l.monto / max) * pw, 2);
         return (
           <g key={l.linea}>
-            <text className="axl" x={0} y={y + 15}>{l.linea}</text>
-            <path d={extremoRedondeado(PLab, y + 4, bw, 14)} fill={color[i % 4]} />
-            <text className="dl" x={PLab + bw + 9} y={y + 15}>{dec(l.participacion)} %</text>
+            <text className="axl" x={0} y={y + 16}>{l.linea}</text>
+            <rect x={PLab} y={y + 4} width={pw} height={16} rx={4} className="pista" />
+            <path d={extremoRedondeado(PLab, y + 4, bw, 16)} fill={color[i % 4]} />
+            <text className="dl" x={PLab + bw + 9} y={y + 16}>{dec(l.participacion)} %</text>
           </g>
         );
       })}
@@ -218,7 +259,9 @@ export function GraficoLineas({ lineas }: { lineas: PuntoLinea[] }) {
 export type PuntoCobertura = { nombre: string; cobertura: number; disparo: number; estado: string };
 
 export function GraficoCobertura({ items }: { items: PuntoCobertura[] }) {
-  const W = 700, rh = 29, PLab = 186, PR = 78, PT = 18;
+  const [caja, W] = useAncho();
+  if (!items.length) return <SinDatos>La cobertura se calcula con el consumo de las ventas. Aparece cuando haya consumo registrado.</SinDatos>;
+  const rh = 29, PLab = Math.min(186, W * 0.36), PR = 52, PT = 18;
   const pw = W - PLab - PR, H = PT + items.length * rh + 10;
   const max = Math.max(32, Math.ceil(Math.max(...items.map((i) => Math.min(i.cobertura, 60))) / 10) * 10);
   const ticks = Array.from({ length: Math.floor(max / 10) + 1 }, (_, i) => i * 10);
@@ -233,7 +276,7 @@ export function GraficoCobertura({ items }: { items: PuntoCobertura[] }) {
   });
 
   return (
-    <Lienzo ancho={W} alto={H} etiqueta="Días de cobertura por insumo, con una marca vertical en el punto de reorden de cada referencia" marcas={marcas}>
+    <Lienzo caja={caja} ancho={W} alto={H} etiqueta="Días de cobertura por insumo, con una marca vertical en el punto de reorden de cada referencia" marcas={marcas}>
       {ticks.map((t) => {
         const x = PLab + (t / max) * pw;
         return (
@@ -262,18 +305,29 @@ export function GraficoCobertura({ items }: { items: PuntoCobertura[] }) {
   );
 }
 
-/* ── Alternancia gráfico / tabla ────────────────────────────────────────── */
-export function ConTabla({ grafico, tabla }: { grafico: ReactNode; tabla: ReactNode }) {
+/* ── Tarjeta con alternancia gráfico / tabla ────────────────────────────── */
+export function TarjetaGrafico({
+  titulo, detalle, nota, leyenda, grafico, tabla,
+}: {
+  titulo: string; detalle?: ReactNode; nota?: ReactNode; leyenda?: ReactNode; grafico: ReactNode; tabla: ReactNode;
+}) {
   const [verTabla, setVerTabla] = useState(false);
   return (
-    <>
-      <div className="row" style={{ justifyContent: 'flex-end', marginBottom: 4 }}>
-        <button className="btn btn-sm" onClick={() => setVerTabla((v) => !v)}>
-          {verTabla ? 'Ocultar tabla' : 'Ver tabla'}
-        </button>
-      </div>
-      {grafico}
-      {verTabla && <div style={{ marginTop: 12 }}>{tabla}</div>}
-    </>
+    <Card
+      titulo={titulo}
+      derecha={
+        <>
+          {detalle && <span className="tiny muted">{detalle}</span>}
+          <div className="seg seg-sm" role="group" aria-label={`Vista de ${titulo.toLowerCase()}`}>
+            <button aria-pressed={!verTabla} onClick={() => setVerTabla(false)}>Gráfico</button>
+            <button aria-pressed={verTabla} onClick={() => setVerTabla(true)}>Tabla</button>
+          </div>
+        </>
+      }
+      nota={nota}
+    >
+      {!verTabla && leyenda}
+      {verTabla ? tabla : grafico}
+    </Card>
   );
 }

@@ -36,21 +36,65 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
 const MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
+/**
+ * Zona horaria del negocio. No es un detalle de presentación: define cuándo
+ * empieza y termina un día de operación.
+ *
+ * El servidor corre en UTC. Sin esto, entre las 19:00 y la medianoche en
+ * Colombia —horas pico de una heladería— las ventas se atribuirían al día
+ * siguiente y el cierre consolidaría el día equivocado. Colombia no aplica
+ * horario de verano, así que el desfase es fijo en −05:00.
+ */
+export const ZONA = 'America/Bogota';
+const DESFASE = '-05:00';
+
+function partesEn(d: Date) {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    weekday: 'short',
+  }).formatToParts(d);
+  const v = (t: string) => p.find((x) => x.type === t)?.value ?? '';
+  return {
+    anio: Number(v('year')),
+    mes: Number(v('month')),
+    dia: Number(v('day')),
+    hora: Number(v('hour')) % 24,
+    minuto: Number(v('minute')),
+  };
+}
+
+/** Día de la semana (0 = domingo) en la zona del negocio. */
+function diaSemana(d: Date): number {
+  const { anio, mes, dia } = partesEn(d);
+  return new Date(Date.UTC(anio, mes - 1, dia)).getUTCDay();
+}
+
+/** La hora del día en la zona del negocio — la que agrupa por franja horaria. */
+export function horaDe(d: Date): number {
+  return partesEn(d).hora;
+}
+
 export function fechaCorta(d: Date): string {
-  return d.getDate() + ' ' + MESES[d.getMonth()];
+  const { dia, mes } = partesEn(d);
+  return `${dia} ${MESES[mes - 1]}`;
 }
 
 export function fechaLarga(d: Date): string {
-  return `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES_L[d.getMonth()]}`;
+  const { dia, mes } = partesEn(d);
+  return `${DIAS[diaSemana(d)]}, ${dia} de ${MESES_L[mes - 1]}`;
 }
 
 export function hora(d: Date): string {
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  const { hora: h, minuto } = partesEn(d);
+  return `${String(h).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
 }
 
-/** Medianoche local del día que contiene `d`. */
+/** Medianoche del día de operación que contiene `d`, como instante absoluto. */
 export function inicioDia(d = new Date()): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+  const { anio, mes, dia } = partesEn(d);
+  const mm = String(mes).padStart(2, '0');
+  const dd = String(dia).padStart(2, '0');
+  return new Date(`${anio}-${mm}-${dd}T00:00:00${DESFASE}`);
 }

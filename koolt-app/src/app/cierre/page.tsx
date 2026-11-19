@@ -1,5 +1,6 @@
 import { resumenDelDia, cierresRecientes } from '@/dominio/cierre';
 import { prisma } from '@/lib/db';
+import { exigirSesion } from '@/lib/guardia';
 import { Encabezado, Kpi, Card, Seccion, Tabla, Aviso, Chip } from '@/components/ui';
 import { CierreForm } from '@/components/CierreForm';
 import { cop, duracion, fechaLarga, inicioDia } from '@/lib/formato';
@@ -7,6 +8,7 @@ import { cop, duracion, fechaLarga, inicioDia } from '@/lib/formato';
 export const dynamic = 'force-dynamic';
 
 export default async function PaginaCierre() {
+  await exigirSesion();
   const hoy = inicioDia();
   const [r, cierres, existente] = await Promise.all([
     resumenDelDia(hoy),
@@ -17,9 +19,8 @@ export default async function PaginaCierre() {
   return (
     <>
       <Encabezado
-        eyebrow="Proceso 2 · cierre de operación"
         titulo="Cierre diario"
-        sub="El consolidado del día lo genera el sistema. El contador de la máquina de helados se ingresa a mano y sirve como control cruzado, no como fuente del dato."
+        sub="El sistema arma el consolidado del día con las ventas registradas. El contador de la máquina de helados es opcional y sirve para cruzar las cifras."
         acciones={<Chip>{fechaLarga(hoy)}</Chip>}
       />
 
@@ -45,9 +46,8 @@ export default async function PaginaCierre() {
               </Aviso>
             )}
             <Aviso>
-              El contraste contra el contador es la práctica que aporta Square for Restaurants: expone merma,
-              calibración y consumo interno que de otro modo quedan invisibles. Es opcional —si no se ingresa, el
-              cierre se genera igual— y nunca reemplaza el registro de ventas.
+              Si el contador de la máquina no coincide con las unidades vendidas, la diferencia apunta a merma,
+              calibración o consumo interno. Es opcional: sin él, el cierre se genera igual.
             </Aviso>
           </div>
         </Card>
@@ -63,7 +63,7 @@ export default async function PaginaCierre() {
               cop(p.monto),
             ])}
           />
-          <div className="eyebrow" style={{ marginTop: 16, marginBottom: 6 }}>Por medio de pago</div>
+          <h4 className="sub-h">Por medio de pago</h4>
           <Tabla
             cols={[{ t: 'Medio' }, { t: 'Transacciones', n: true }, { t: 'Monto', n: true }]}
             filas={r.porMedioPago.map((p) => [p.medio, String(p.transacciones), cop(p.monto)])}
@@ -89,7 +89,7 @@ export default async function PaginaCierre() {
           filas={cierres.map((c) => [
             <>
               <span className="em">{fechaLarga(c.fecha)}</span>
-              {c.demo && <> <span className="chip">histórico</span></>}
+              {c.demo && <> <span className="chip">ejemplo</span></>}
             </>,
             String(c.transacciones),
             cop(c.total),
@@ -98,7 +98,7 @@ export default async function PaginaCierre() {
             c.diferencia == null ? '—' : `${c.diferencia > 0 ? '+' : ''}${c.diferencia}`,
             duracion(c.generadoEnMs),
           ])}
-          vacio="Todavía no se ha generado ningún cierre. El tiempo de generación se mide aquí: es el indicador de OE2."
+          vacio="Todavía no se ha generado ningún cierre."
         />
       </Card>
     </>

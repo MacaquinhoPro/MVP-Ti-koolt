@@ -10,6 +10,10 @@
  * Para empezar un piloto limpio: npm run db:reset y borrar el bloque demo, o
  * ejecutar `DEMO=0 npm run db:seed`.
  */
+// La siembra genera horas de apertura (11:00 a 21:00): tienen que ser horas de
+// Colombia aunque el script se ejecute desde otra zona.
+process.env.TZ = 'America/Bogota';
+
 import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { INSUMOS, PRODUCTOS, USUARIOS, PESO_HORAS, PESO_TOPPINGS } from '../src/dominio/catalogo';

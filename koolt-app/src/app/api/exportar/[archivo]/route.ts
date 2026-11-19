@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { verificar } from '@/lib/api';
 import { folio as fmtFolio, hora } from '@/lib/formato';
 
 /**
@@ -32,6 +33,14 @@ function respuesta(nombre: string, contenido: string) {
 export async function GET(_req: Request, { params }: { params: Promise<{ archivo: string }> }) {
   const { archivo } = await params;
 
+  // El cierre lo consulta todo el equipo; ventas e inventario son de administración.
+  try {
+    await verificar(archivo === 'cierres.csv' ? 'equipo' : 'admin');
+  } catch (e) {
+    const status = (e as { status?: number }).status ?? 403;
+    return new Response(e instanceof Error ? e.message : 'Sin acceso', { status });
+  }
+
   if (archivo === 'ventas.csv') {
     const ventas = await prisma.venta.findMany({
       orderBy: { fechaHora: 'asc' },
@@ -50,7 +59,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ archivo
         filas.push([
           fmtFolio(v.folio), v.fechaHora.toISOString().slice(0, 10), hora(v.fechaHora), i + 1,
           l.tipo, nombre, l.cantidad, l.precioUnitario, l.precioUnitario * l.cantidad,
-          v.medioPago, v.usuario.nombre, v.demo ? 'histórico reconstruido' : 'registrada en el sistema',
+          v.medioPago, v.usuario.nombre, v.demo ? 'dato de ejemplo' : 'registrada en el sistema',
         ]);
       });
     }
@@ -67,7 +76,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ archivo
       filas.push([
         c.fecha.toISOString().slice(0, 10), c.transacciones, c.total, c.unidadesHelado,
         c.unidadesGranizado, c.contadorMaquina, c.diferencia, c.generadoEnMs,
-        c.demo ? 'histórico reconstruido' : 'generado en el sistema',
+        c.demo ? 'dato de ejemplo' : 'generado en el sistema',
       ]);
     }
     return respuesta('koolt-cierres.csv', csv(filas));

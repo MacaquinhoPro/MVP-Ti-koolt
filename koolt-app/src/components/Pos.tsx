@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cop, dec, folio as fmtFolio } from '@/lib/formato';
-import { MEDIOS_PAGO, METAS } from '@/dominio/constantes';
+import { LINEAS, MEDIOS_PAGO, METAS } from '@/dominio/constantes';
 import { useToast, enviar } from './Toast';
 import { Aviso, Card, Chip } from './ui';
+import { IconoMenos } from './iconos';
 
 export type ProductoVista = {
   id: string; nombre: string; tamano: string; linea: string; precio: number;
@@ -35,7 +36,7 @@ export function Pos({
   const [comprobante, setComprobante] = useState<Comprobante | null>(null);
   const cronometro = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // El cronómetro arranca con el primer toque y mide lo que exige OE2:
+  // El cronómetro arranca con el primer toque y mide el indicador de tiempo de registro:
   // el tiempo real de registro de una venta, no una estimación.
   useEffect(() => {
     if (inicio == null) {
@@ -78,6 +79,7 @@ export function Pos({
   const nProductos = lineas.reduce((a, l) => a + (l.tipo === 'producto' ? l.cantidad : 0), 0);
   const nAdiciones = lineas.reduce((a, l) => a + (l.tipo === 'adicion' ? l.cantidad : 0), 0);
   const segundos = transcurrido / 1000;
+  const enVenta = new Map(lineas.filter((l) => l.tipo === 'producto').map((l) => [l.ref, l.cantidad]));
 
   async function cobrar() {
     if (!lineas.length || enviando) return;
@@ -118,17 +120,27 @@ export function Pos({
         <div className="stack">
           <Card titulo="Producto" derecha={<Chip>4 líneas · granizado incluido</Chip>}>
             <div className="pgrid">
-              {productos.map((p) => (
-                <button
-                  key={p.id}
-                  className={`pbtn${p.falta ? ' falta' : ''}`}
-                  onClick={() => agregar({ tipo: 'producto', ref: p.id, nombre: p.nombre, detalle: `${p.tamano} · ${p.linea}`, precio: p.precio })}
-                >
-                  <span className="pn">{p.nombre}</span>
-                  <span className="pz">{p.falta ? `falta ${p.falta.toLowerCase()}` : `${p.tamano} · ${p.linea}`}</span>
-                  <span className="pp">{cop(p.precio)}</span>
-                </button>
-              ))}
+              {productos.map((p) => {
+                const n = enVenta.get(p.id);
+                const serie = LINEAS.indexOf(p.linea as (typeof LINEAS)[number]);
+                return (
+                  <button
+                    key={p.id}
+                    className={`pbtn${p.falta ? ' falta' : ''}`}
+                    style={{ '--ln': `var(--s${(serie < 0 ? 0 : serie) + 1})` } as React.CSSProperties}
+                    aria-label={`${p.nombre}, ${p.tamano}, ${cop(p.precio)}${n ? `, ${n} en la venta` : ''}`}
+                    onClick={() => agregar({ tipo: 'producto', ref: p.id, nombre: p.nombre, detalle: `${p.tamano} · ${p.linea}`, precio: p.precio })}
+                  >
+                    {n ? <span className="pc num">{n}</span> : null}
+                    <span className="pn">{p.nombre}</span>
+                    <span className="pz">
+                      <i className="ln" />
+                      {p.falta ? `Falta ${p.falta.toLowerCase()}` : `${p.tamano} · ${p.linea}`}
+                    </span>
+                    <span className="pp">{cop(p.precio)}</span>
+                  </button>
+                );
+              })}
             </div>
           </Card>
 
@@ -153,7 +165,7 @@ export function Pos({
             <Card
               titulo="Último comprobante"
               derecha={<Chip tono="ok">Registrado</Chip>}
-              nota={`Comprobante interno: el proyecto excluye la facturación electrónica ante la DIAN. Este registro descontó ${comprobante.insumosDescontados} ingredientes del inventario por receta.`}
+              nota={`Comprobante interno: no reemplaza la factura electrónica. Esta venta descontó ${comprobante.insumosDescontados} ingredientes del inventario según la receta.`}
             >
               <div className="row" style={{ gap: 22, alignItems: 'flex-start' }}>
                 <Dato k="Folio" v={comprobante.folioTexto} />
@@ -170,10 +182,10 @@ export function Pos({
           )}
         </div>
 
-        <div className="tick">
+        <div className="tick" id="venta-en-curso">
           <div className="tick-h">
             <div className="row" style={{ justifyContent: 'space-between' }}>
-              <strong style={{ fontFamily: 'var(--fd)', fontSize: 15 }}>Venta en curso</strong>
+              <strong className="tick-t">Venta en curso</strong>
               <span className="fol">{fmtFolio(siguienteFolio)}</span>
             </div>
             <div className="timer">
@@ -199,14 +211,15 @@ export function Pos({
                     <em>{l.detalle}</em>
                   </span>
                   <span className="m">{cop(l.precio * l.cantidad)}</span>
-                  <button className="x" onClick={() => quitar(i)} aria-label={`Quitar ${l.nombre}`}>×</button>
+                  <button className="x" onClick={() => quitar(i)} aria-label={`Quitar una unidad de ${l.nombre}`}>
+                    <IconoMenos />
+                  </button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="empty">
-              Sin líneas todavía.
-              <br />
+            <div className="empty tick-e">
+              <strong>Sin líneas todavía</strong>
               Toque un producto para empezar.
             </div>
           )}
@@ -235,8 +248,8 @@ export function Pos({
                 ))}
               </div>
             </div>
-            <button className="btn btn-pri" style={{ width: '100%', padding: 11 }} disabled={!lineas.length || enviando} onClick={cobrar}>
-              {enviando ? 'Registrando…' : 'Cobrar y registrar'}
+            <button className="btn btn-pri btn-lg" disabled={!lineas.length || enviando} onClick={cobrar}>
+              {enviando ? 'Registrando…' : lineas.length ? <>Cobrar <span className="num">{cop(total)}</span></> : 'Cobrar y registrar'}
             </button>
             {lineas.length > 0 && (
               <button className="btn btn-gh btn-sm" onClick={cancelar}>Cancelar venta</button>
@@ -245,11 +258,23 @@ export function Pos({
         </div>
       </div>
 
+      {lineas.length > 0 && (
+        <div className="pos-bar" role="region" aria-label="Resumen de la venta">
+          <a href="#venta-en-curso" className="pos-bar-r">
+            <span className="tiny">{nProductos + nAdiciones} ítem{nProductos + nAdiciones === 1 ? '' : 's'} · ver detalle</span>
+            <strong className="num">{cop(total)}</strong>
+          </a>
+          <button className="btn btn-pri" disabled={enviando} onClick={cobrar}>
+            {enviando ? 'Registrando…' : 'Cobrar'}
+          </button>
+        </div>
+      )}
+
       {rol === 'mostrador' && (
         <div style={{ marginTop: 18 }}>
           <Aviso>
             Sesión de mostrador: puede registrar ventas y consultar el cierre del día. El inventario, las compras y la
-            configuración quedan reservados al administrador — es el proceso 9 del alcance.
+            configuración son de administración.
           </Aviso>
         </div>
       )}
@@ -261,8 +286,8 @@ export function Pos({
 function Dato({ k, v, color, mono = true }: { k: string; v: string; color?: string; mono?: boolean }) {
   return (
     <div>
-      <div className="eyebrow">{k}</div>
-      <div className={mono ? 'num' : undefined} style={{ fontSize: 15, fontWeight: 500, color }}>{v}</div>
+      <div className="dk">{k}</div>
+      <div className={mono ? 'num dv' : 'dv'} style={{ color }}>{v}</div>
     </div>
   );
 }

@@ -94,17 +94,17 @@ export function InventarioForms({ insumos, conteos }: { insumos: OpcionInsumo[];
           </div>
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Aviso>
-              El stock es el total de la referencia —las dos o tres bolsas del local más el saldo en bodega—. La
-              entrada documenta tanto la reposición desde bodega como la recepción de una compra.
+              El stock es el total de la referencia: lo que hay en el local más el saldo en bodega. Use una entrada
+              tanto para traer producto de bodega como para registrar lo que llega de una compra.
             </Aviso>
             <Aviso>
-              La merma documenta el descarte que el diagnóstico cuantificó: ~0,5 L de leche cada 3 días y ~50 g diarios
-              de topping. Registrarla es lo que evita que el stock del sistema se desvíe en silencio.
+              Registre la merma cada vez que algo se vence o se descarta. Así el stock del sistema no se desvía del que
+              hay en el local.
             </Aviso>
           </div>
         </Card>
 
-        <Card titulo="Conteo físico" derecha={<Chip>mide OE3</Chip>}>
+        <Card titulo="Conteo físico">
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(132px,1fr))', gap: 10 }}>
             <div style={{ gridColumn: '1/-1' }}>
               <label className="fl" htmlFor="ct-ins">Insumo</label>
@@ -141,8 +141,8 @@ export function InventarioForms({ insumos, conteos }: { insumos: OpcionInsumo[];
               />
             ) : (
               <Aviso>
-                El conteo no corrige el stock en silencio: deja un movimiento con su desviación, que es exactamente lo
-                que mide el objetivo OE3 (≤ {METAS.desviacionConteoPct} % por ingrediente).
+                Cuente lo que hay y regístrelo: el sistema ajusta el stock y guarda la diferencia. Una desviación de
+                hasta {METAS.desviacionConteoPct} % por ingrediente se considera normal.
               </Aviso>
             )}
           </div>

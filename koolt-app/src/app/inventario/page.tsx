@@ -3,7 +3,7 @@ import { movimientosRecientes, conteosRecientes } from '@/dominio/movimientos';
 import { prisma } from '@/lib/db';
 import { Encabezado, Kpi, Card, Seccion, Tabla, ChipEstado, Chip, Medidor } from '@/components/ui';
 import { InventarioForms } from '@/components/InventarioForms';
-import { GraficoCobertura, ConTabla } from '@/components/Graficos';
+import { GraficoCobertura, TarjetaGrafico } from '@/components/Graficos';
 import { cantidad as fmtCantidad, cop, copCorto, dec, fechaCorta, hora } from '@/lib/formato';
 import { MARGEN_ALERTA } from '@/dominio/constantes';
 import Link from 'next/link';
@@ -41,7 +41,6 @@ export default async function PaginaInventario() {
   return (
     <>
       <Encabezado
-        eyebrow="Procesos 5 y 6 · existencias y reorden"
         titulo="Inventario"
         sub={`Existencias en tiempo real: cada venta descuenta los ingredientes por receta. La alerta se dispara ${MARGEN_ALERTA} días antes del agotamiento proyectado.`}
         acciones={<a className="btn btn-sm" href="/api/exportar/inventario.csv" download>Exportar CSV</a>}
@@ -71,7 +70,7 @@ export default async function PaginaInventario() {
                 </div>
                 <div><ChipEstado estado={e.estado} /></div>
                 <div className="num tiny">
-                  {Number.isFinite(e.cobertura) ? `${dec(e.cobertura)} días` : 'sin consumo'}
+                  {Number.isFinite(e.cobertura) ? `${dec(e.cobertura)} días` : <span className="muted">sin consumo</span>}
                   <br />
                   <span className="muted">{fmtCantidad(e.insumo.stock, e.insumo.unidad)}</span>
                 </div>
@@ -88,7 +87,7 @@ export default async function PaginaInventario() {
                       Comprar {s.empaques} {s.empaques === 1 ? 'empaque' : 'empaques'}
                     </Link>
                   ) : (
-                    <span className="tiny muted">—</span>
+                    <span />
                   )}
                 </div>
               </div>
@@ -139,11 +138,9 @@ export default async function PaginaInventario() {
       </Card>
 
       <Seccion>Cobertura por insumo</Seccion>
-      <Card
-        titulo="Días que alcanza el stock actual"
-        derecha={<span className="tiny muted">la marca vertical es el punto de reorden de cada referencia</span>}
-      >
-        <ConTabla
+      <TarjetaGrafico
+          titulo="Días que alcanza el stock actual"
+          nota="La marca vertical es el punto de reorden de cada referencia."
           grafico={<GraficoCobertura items={cobertura} />}
           tabla={
             <Tabla
@@ -152,7 +149,6 @@ export default async function PaginaInventario() {
             />
           }
         />
-      </Card>
 
       <Seccion>Movimientos recientes</Seccion>
       <Card>

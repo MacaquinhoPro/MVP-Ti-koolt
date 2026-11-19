@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { VENTANA_CONSUMO, LINEAS } from './constantes';
-import { fechaCorta, fechaLarga, inicioDia } from '@/lib/formato';
+import { fechaCorta, fechaLarga, horaDe, inicioDia } from '@/lib/formato';
 
 export type PuntoDia = { etiqueta: string; etiquetaLarga: string; monto: number; unidades: number };
 export type PuntoHora = { hora: number; etiqueta: string; monto: number; transacciones: number; pico: boolean };
@@ -51,10 +51,11 @@ export async function reportes(ventanaDias = VENTANA_CONSUMO): Promise<Reportes>
     const d = porDia.get(dia) ?? { monto: 0, unidades: 0 };
     d.monto += v.total;
 
-    const h = porHora.get(v.fechaHora.getHours()) ?? { monto: 0, transacciones: 0 };
+    const franja = horaDe(v.fechaHora);
+    const h = porHora.get(franja) ?? { monto: 0, transacciones: 0 };
     h.monto += v.total;
     h.transacciones += 1;
-    porHora.set(v.fechaHora.getHours(), h);
+    porHora.set(franja, h);
 
     for (const l of v.lineas) {
       if (l.tipo === 'adicion' && l.insumoId) {

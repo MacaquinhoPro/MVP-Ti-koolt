@@ -2,11 +2,10 @@ import type { ReactNode } from 'react';
 import { IconoInfo, IconoCampana } from './iconos';
 import type { EstadoInsumo } from '@/dominio/constantes';
 
-export function Encabezado({ eyebrow, titulo, sub, acciones }: { eyebrow: string; titulo: string; sub: string; acciones?: ReactNode }) {
+export function Encabezado({ titulo, sub, acciones }: { titulo: string; sub: string; acciones?: ReactNode }) {
   return (
     <div className="topbar">
-      <div>
-        <div className="eyebrow">{eyebrow}</div>
+      <div className="topbar-l">
         <h1>{titulo}</h1>
         <p className="sub">{sub}</p>
       </div>

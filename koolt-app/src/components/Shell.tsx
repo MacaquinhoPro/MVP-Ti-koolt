@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { usePathname } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import type { Rol } from '@/lib/sesion';
 import {
   IconoVenta, IconoCierre, IconoInventario, IconoCompras,
-  IconoAnalitica, IconoMetricas, IconoCatalogo, LogoKoolt,
+  IconoAnalitica, IconoMetricas, IconoCatalogo, IconoEquipo, LogoKoolt,
 } from './iconos';
 
 type Modulo = {
@@ -23,28 +23,29 @@ export const MODULOS: Modulo[] = [
   { href: '/inventario', titulo: 'Inventario', grupo: 'Abastecimiento', soloAdmin: true, Icono: IconoInventario },
   { href: '/compras', titulo: 'Compras', grupo: 'Abastecimiento', soloAdmin: true, Icono: IconoCompras },
   { href: '/analitica', titulo: 'Analítica', grupo: 'Información', soloAdmin: true, Icono: IconoAnalitica },
-  { href: '/metricas', titulo: 'Métricas del piloto', grupo: 'Información', soloAdmin: true, Icono: IconoMetricas },
-  { href: '/catalogo', titulo: 'Catálogo y recetas', grupo: 'Maestros', soloAdmin: true, Icono: IconoCatalogo },
+  { href: '/metricas', titulo: 'Indicadores', grupo: 'Información', soloAdmin: true, Icono: IconoMetricas },
+  { href: '/catalogo', titulo: 'Catálogo y recetas', grupo: 'Administración', soloAdmin: true, Icono: IconoCatalogo },
+  { href: '/equipo', titulo: 'Equipo', grupo: 'Administración', soloAdmin: true, Icono: IconoEquipo },
 ];
 
-export function Shell({ rol, enAlerta, children }: { rol: Rol; enAlerta: number; children: React.ReactNode }) {
-  const path = usePathname();
-  const router = useRouter();
-  const [cambiando, iniciar] = useTransition();
+const ROL: Record<Rol, string> = { admin: 'Administración', mostrador: 'Mostrador' };
 
-  const visibles = MODULOS.filter((m) => rol === 'admin' || !m.soloAdmin);
+export function Shell({
+  sesion, enAlerta, pendientes, children,
+}: {
+  sesion: { nombre: string; email: string | null; rol: Rol };
+  enAlerta: number;
+  pendientes: number;
+  children: React.ReactNode;
+}) {
+  const path = usePathname();
+  const visibles = MODULOS.filter((m) => sesion.rol === 'admin' || !m.soloAdmin);
   const grupos = [...new Set(visibles.map((m) => m.grupo))];
 
-  function cambiarRol(nuevo: string) {
-    iniciar(async () => {
-      await fetch('/api/sesion', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ rol: nuevo }),
-      });
-      if (nuevo === 'mostrador' && MODULOS.find((m) => m.href === path)?.soloAdmin) router.push('/venta');
-      router.refresh();
-    });
+  function insignia(href: string) {
+    if (href === '/inventario' && enAlerta > 0) return <span className="nav-badge" aria-label={`${enAlerta} en alerta`}>{enAlerta}</span>;
+    if (href === '/equipo' && pendientes > 0) return <span className="nav-badge" aria-label={`${pendientes} por aprobar`}>{pendientes}</span>;
+    return null;
   }
 
   return (
@@ -54,7 +55,7 @@ export function Shell({ rol, enAlerta, children }: { rol: Rol; enAlerta: number;
           <LogoKoolt className="brand-mk" />
           <div className="brand-tx">
             <strong>KOOLT</strong>
-            <span>Cajicá · sede única</span>
+            <span>Cajicá</span>
           </div>
         </div>
 
@@ -68,7 +69,7 @@ export function Shell({ rol, enAlerta, children }: { rol: Rol; enAlerta: number;
                   <Link key={href} href={href} aria-current={path === href ? 'page' : undefined}>
                     <Icono className="ni" />
                     {titulo}
-                    {href === '/inventario' && enAlerta > 0 && <span className="nav-badge">{enAlerta}</span>}
+                    {insignia(href)}
                   </Link>
                 ))}
             </div>
@@ -76,16 +77,12 @@ export function Shell({ rol, enAlerta, children }: { rol: Rol; enAlerta: number;
         </nav>
 
         <div className="rail-foot">
-          <div>
-            <label className="fl" htmlFor="rol">Sesión</label>
-            <select id="rol" value={rol} disabled={cambiando} onChange={(e) => cambiarRol(e.target.value)}>
-              <option value="admin">Sebastián · administrador</option>
-              <option value="mostrador">Mostrador · turno</option>
-            </select>
-          </div>
-          <div className="sync">
-            <span className="dot" />
-            <span>SQLite local · {process.env.NODE_ENV === 'production' ? 'producción' : 'desarrollo'}</span>
+          <div className="cuenta">
+            <UserButton />
+            <div className="cuenta-tx">
+              <strong>{sesion.nombre}</strong>
+              <span>{ROL[sesion.rol]}</span>
+            </div>
           </div>
         </div>
       </aside>
@@ -93,17 +90,11 @@ export function Shell({ rol, enAlerta, children }: { rol: Rol; enAlerta: number;
       <div className="mobile-nav">
         <div className="mn-top">
           <LogoKoolt className="brand-mk" />
-          <strong style={{ fontFamily: 'var(--fd)', fontSize: 16 }}>KOOLT</strong>
-          <select
-            value={rol}
-            disabled={cambiando}
-            onChange={(e) => cambiarRol(e.target.value)}
-            style={{ width: 'auto', marginLeft: 'auto', fontSize: 12, padding: '5px 7px' }}
-            aria-label="Sesión"
-          >
-            <option value="admin">Administrador</option>
-            <option value="mostrador">Mostrador</option>
-          </select>
+          <strong style={{ fontFamily: 'var(--fd)', fontSize: 17 }}>KOOLT</strong>
+          <div className="mn-cuenta">
+            <span>{ROL[sesion.rol]}</span>
+            <UserButton />
+          </div>
         </div>
         <div className="mn-scroll">
           {visibles.map((m) => (

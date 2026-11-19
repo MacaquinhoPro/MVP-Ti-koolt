@@ -4,7 +4,7 @@ import { registrarConteo } from '@/dominio/movimientos';
 import { dec } from '@/lib/formato';
 
 export async function POST(req: Request) {
-  return manejar(async () => {
+  return manejar('admin', async () => {
     const { insumoId, conteoFisico } = await req.json();
     const r = await registrarConteo({ insumoId, conteoFisico: Number(conteoFisico) });
     revalidatePath('/inventario');

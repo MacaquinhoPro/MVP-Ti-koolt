@@ -1,6 +1,6 @@
 import { reportes } from '@/dominio/reportes';
-import { Encabezado, Kpi, Card, Tabla } from '@/components/ui';
-import { GraficoDias, GraficoHoras, GraficoToppings, GraficoLineas, ConTabla } from '@/components/Graficos';
+import { Encabezado, Kpi, Tabla } from '@/components/ui';
+import { GraficoDias, GraficoHoras, GraficoToppings, GraficoLineas, TarjetaGrafico } from '@/components/Graficos';
 import { cantidad as fmtCantidad, cop, copCorto, dec } from '@/lib/formato';
 import { VENTANA_CONSUMO } from '@/dominio/constantes';
 
@@ -18,14 +18,13 @@ export default async function PaginaAnalitica() {
   return (
     <>
       <Encabezado
-        eyebrow="Proceso 8 · reportes de operación"
         titulo="Analítica"
-        sub="Lo que el Excel de totales no podía responder: qué producto y qué topping se venden, en qué día y en qué franja horaria."
+        sub="Qué productos y adiciones se venden, en qué días y en qué horas."
         acciones={<a className="btn btn-sm" href="/api/exportar/ventas.csv" download>Exportar ventas CSV</a>}
       />
 
       <div className="kpis" style={{ marginBottom: 18 }}>
-        <Kpi k={`Venta de ${VENTANA_CONSUMO} días`} v={copCorto(r.resumen.total)} f={`${r.resumen.transacciones.toLocaleString('es-CO')} transacciones`} acento />
+        <Kpi k={`Venta de ${VENTANA_CONSUMO} días`} v={copCorto(r.resumen.total)} f={`${r.resumen.transacciones.toLocaleString('es-CO')} transacciones`} />
         <Kpi
           k="Ticket promedio"
           v={cop(r.resumen.ticketPromedio)}
@@ -39,8 +38,9 @@ export default async function PaginaAnalitica() {
         <Kpi k="Unidades vendidas" v={r.resumen.unidades.toLocaleString('es-CO')} f="helado y granizado, las cuatro líneas" />
       </div>
 
-      <Card titulo="Venta diaria" derecha={<span className="tiny muted">últimos {VENTANA_CONSUMO} días</span>}>
-        <ConTabla
+      <TarjetaGrafico
+          titulo="Venta diaria"
+          detalle={`últimos ${VENTANA_CONSUMO} días`}
           grafico={<GraficoDias dias={r.dias} />}
           tabla={
             <Tabla
@@ -49,14 +49,11 @@ export default async function PaginaAnalitica() {
             />
           }
         />
-      </Card>
 
       <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card
-          titulo="Venta por franja horaria"
-          nota="Dato que el Excel de totales no podía producir: permite decidir en qué horas vale la pena el tercer turno de mostrador."
-        >
-          <ConTabla
+          <TarjetaGrafico
+            titulo="Venta por franja horaria"
+            nota="Sirve para decidir en qué horas conviene reforzar el mostrador."
             grafico={<GraficoHoras horas={r.horas} />}
             tabla={
               <Tabla
@@ -65,21 +62,20 @@ export default async function PaginaAnalitica() {
               />
             }
           />
-        </Card>
 
-        <Card
-          titulo="Mix por línea de producto"
-          nota="El granizado aparece aquí con cifra propia: es la línea que hoy queda fuera de toda medición por no tener contador en la máquina."
-        >
-          <div className="lg" style={{ marginBottom: 10 }}>
-            {r.lineas.map((l, i) => (
-              <span key={l.linea}>
-                <i style={{ background: colores[i % 4] }} />
-                {l.linea}
-              </span>
-            ))}
-          </div>
-          <ConTabla
+          <TarjetaGrafico
+            titulo="Mix por línea de producto"
+            nota="El granizado tiene cifra propia aquí: la máquina de helados no lo cuenta."
+            leyenda={
+              <div className="lg" style={{ marginBottom: 12 }}>
+                {r.lineas.map((l, i) => (
+                  <span key={l.linea}>
+                    <i style={{ background: colores[i % 4] }} />
+                    {l.linea}
+                  </span>
+                ))}
+              </div>
+            }
             grafico={<GraficoLineas lineas={r.lineas} />}
             tabla={
               <Tabla
@@ -88,16 +84,13 @@ export default async function PaginaAnalitica() {
               />
             }
           />
-        </Card>
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <Card
-          titulo="Adiciones más vendidas"
-          derecha={<span className="tiny muted">últimos {VENTANA_CONSUMO} días</span>}
-          nota="El equipo reorganiza cantidades de topping a ojo cada día (diagnóstico 2.3). Este orden es el dato que faltaba para hacerlo con respaldo."
-        >
-          <ConTabla
+          <TarjetaGrafico
+            titulo="Adiciones más vendidas"
+            detalle={`últimos ${VENTANA_CONSUMO} días`}
+            nota="Sirve para decidir cuánto preparar de cada adición al abrir."
             grafico={<GraficoToppings toppings={r.toppings} />}
             tabla={
               <Tabla
@@ -111,7 +104,6 @@ export default async function PaginaAnalitica() {
               />
             }
           />
-        </Card>
       </div>
     </>
   );

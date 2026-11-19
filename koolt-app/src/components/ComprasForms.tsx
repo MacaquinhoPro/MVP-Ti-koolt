@@ -190,7 +190,7 @@ export function OrdenManual({ insumos }: { insumos: OpcionCompra[] }) {
               {enviando ? 'Creando…' : 'Crear orden manual'}
             </button>
             <span className="tiny muted">
-              Queda marcada como <b>manual</b>: así el indicador OE6 distingue las órdenes que nacieron del sistema.
+              Queda marcada como <b>manual</b>, para distinguirla de las órdenes que propone el sistema.
             </span>
           </div>
         )}

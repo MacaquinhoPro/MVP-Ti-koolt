@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { rolActual } from '@/lib/sesion';
+import { exigirSesion } from '@/lib/guardia';
 import { Encabezado, Chip } from '@/components/ui';
 import { Pos, type ProductoVista, type ToppingVista } from '@/components/Pos';
 import { folio as fmtFolio } from '@/lib/formato';
@@ -7,11 +7,12 @@ import { folio as fmtFolio } from '@/lib/formato';
 export const dynamic = 'force-dynamic';
 
 export default async function PaginaVenta() {
-  const [productos, insumos, ultimo, rol] = await Promise.all([
+  const sesion = await exigirSesion();
+  const rol = sesion.rol;
+  const [productos, insumos, ultimo] = await Promise.all([
     prisma.producto.findMany({ where: { activo: true }, orderBy: { orden: 'asc' }, include: { receta: true } }),
     prisma.insumo.findMany(),
     prisma.venta.aggregate({ _max: { folio: true } }),
-    rolActual(),
   ]);
 
   const stockPor = new Map(insumos.map((i) => [i.id, i]));
@@ -38,12 +39,11 @@ export default async function PaginaVenta() {
   return (
     <>
       <Encabezado
-        eyebrow="Proceso 1 · registro de ventas"
         titulo="Venta"
         sub="Toque el producto, agregue las adiciones y cobre. El registro queda con folio, hora y usuario: no hay papel intermedio ni transcripción posterior."
         acciones={
           <>
-            <Chip tono="ac">{rol === 'admin' ? 'Sebastián' : 'Turno de mostrador'}</Chip>
+            <Chip tono="ac">{sesion.nombre}</Chip>
             <Chip>Próximo folio {fmtFolio(siguienteFolio)}</Chip>
           </>
         }

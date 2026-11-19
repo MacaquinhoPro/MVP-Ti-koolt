@@ -90,3 +90,26 @@ export function LogoKoolt({ className }: P) {
     </svg>
   );
 }
+export function IconoMenos({ className }: P) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="M6 12h12" />
+    </svg>
+  );
+}
+export function IconoCheck({ className }: P) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+export function IconoEquipo({ className }: P) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19.5c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <path d="M15.5 4.9a3.2 3.2 0 010 6.2M17.5 14.4c1.8.7 3 2.5 3 5.1" />
+    </svg>
+  );
+}

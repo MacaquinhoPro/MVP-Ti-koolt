@@ -36,7 +36,6 @@ export default async function PaginaCompras() {
   return (
     <>
       <Encabezado
-        eyebrow="Proceso 7 · reabastecimiento"
         titulo="Compras"
         sub={`La sugerencia se calcula con el consumo real de los últimos ${VENTANA_CONSUMO} días y se redondea a la unidad de empaque del proveedor.`}
       />
@@ -49,7 +48,7 @@ export default async function PaginaCompras() {
           v={String(nOrdenes)}
           f={nOrdenes ? `${nSugeridas} nacieron de una sugerencia` : 'ninguna todavía'}
         />
-        <Kpi k="Viaje de urgencia evitado" v={cop(COSTO_VIAJE_URGENTE)} f="costo del viaje adicional a Bogotá (diagnóstico 2.4)" />
+        <Kpi k="Viaje de urgencia evitado" v={cop(COSTO_VIAJE_URGENTE)} f="lo que cuesta un viaje de reposición urgente a Bogotá" />
       </div>
 
       <Sugerencias grupos={vista} />

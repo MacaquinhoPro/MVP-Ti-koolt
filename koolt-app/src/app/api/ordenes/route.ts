@@ -3,7 +3,7 @@ import { manejar } from '@/lib/api';
 import { crearOrden } from '@/dominio/compras';
 
 export async function POST(req: Request) {
-  return manejar(async () => {
+  return manejar('admin', async () => {
     const { lineas, origen } = await req.json();
     const o = await crearOrden({
       lineas,

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 
 /** Edición de maestros: precio de un producto o mínimo de un insumo. */
 export async function PATCH(req: Request) {
-  return manejar(async () => {
+  return manejar('admin', async () => {
     const { productoId, precio, insumoId, minimo } = await req.json();
 
     if (productoId) {

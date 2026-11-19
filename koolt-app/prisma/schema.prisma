@@ -25,12 +25,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Cada persona del equipo inicia sesión con Clerk; `clerkId` une la cuenta de
+// acceso con este registro. Una cuenta nueva entra sin aprobar: no ve datos del
+// negocio hasta que un administrador la aprueba y le asigna rol. Los registros
+// sin `clerkId` son vendedores del histórico importado, sin cuenta de acceso.
 model Usuario {
-  id         String  @id
+  id         String   @id @default(cuid())
+  clerkId    String?  @unique
+  email      String?
   nombre     String
   rol        String // "mostrador" | "admin"
-  activo     Boolean @default(true)
-  capacitado Boolean @default(false) // base del indicador OE8
+  aprobado   Boolean  @default(true)
+  activo     Boolean  @default(true)
+  capacitado Boolean  @default(false)
+  creado     DateTime @default(now())
 
   ventas Venta[]
 }

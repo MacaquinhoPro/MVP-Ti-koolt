@@ -1,11 +1,7 @@
 # KOOLT · Operación
 
-MVP del sistema de **registro de ventas, control de inventario y gestión de compras**
-de KOOLT — heladería de helado a base de yogurt y granizados, sede única en Cajicá,
-Cundinamarca.
-
-Corresponde al Capítulo 8 de la Entrega 2 del proyecto de curso *Gerencia de
-Operaciones de TI*, Universidad de La Sabana.
+Sistema de **registro de ventas, control de inventario y gestión de compras** de
+KOOLT — heladería de helado a base de yogurt y granizados en Cajicá, Cundinamarca.
 
 ---
 
@@ -15,14 +11,20 @@ Hace falta una base **PostgreSQL**. Si el proyecto está enlazado a Vercel con l
 integración de Neon instalada, la cadena de conexión se baja sola:
 
 ```bash
+npx vercel env pull .env         # trae DATABASE_URL del proyecto
 npm install
-npx vercel env pull .env.local   # trae DATABASE_URL del proyecto
 npm run setup                    # crea el esquema y siembra la base
 npm run dev                      # http://localhost:3000
 ```
 
-Sin Vercel: copie `.env.example` a `.env.local` y ponga su propia cadena
-`postgres://…` antes de `npm run setup`.
+Sin Vercel: copie `.env.example` a `.env` y ponga su propia cadena
+`postgres://…` antes de `npm install`.
+
+> **El archivo es `.env`, no `.env.local`.** Next lee los dos, pero la CLI de
+> Prisma y el script de siembra solo leen `.env`: con `.env.local`, `npm run setup`
+> falla con `P1012 Environment variable not found: DATABASE_URL`. Créelo antes de
+> `npm install`: el `postinstall` genera el cliente de Prisma, y un cliente generado
+> sin `.env` presente no lo carga después.
 
 `npm run setup` deja la base con el catálogo real de KOOLT y 21 días de histórico
 reconstruido, para que la analítica y el cálculo del punto de reorden tengan sobre
@@ -39,6 +41,25 @@ Otros comandos: `npm run build` (compilación de producción), `npm run db:reset
 
 ---
 
+## Cuentas y acceso
+
+El inicio de sesión lo maneja **Clerk** (integración del Marketplace de Vercel:
+`CLERK_SECRET_KEY` y `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` llegan con
+`vercel env pull`). Las pantallas son `/ingresar` y `/registro`.
+
+- **La primera cuenta que se registra queda como administración.** Para fijar de
+  antemano quién lo es, defina `KOOLT_ADMIN_EMAILS` (correos separados por coma):
+  esos correos entran como administración y el resto queda pendiente.
+- Toda cuenta nueva entra **pendiente**: no ve datos del negocio hasta que un
+  administrador la aprueba en **Equipo** y le asigna rol.
+- **Mostrador** registra ventas y consulta el cierre. **Administración** ve y
+  configura todo lo demás. El rol se verifica en el servidor en cada página y en cada
+  ruta de la API, no solo en el menú.
+- Nadie puede quitarse a sí mismo el acceso, y el local siempre conserva al menos un
+  administrador habilitado.
+
+---
+
 ## Desplegar en Vercel
 
 > **Despliegue desde `koolt-app/`, no desde la carpeta que la contiene.** Si se
@@ -49,7 +70,7 @@ Otros comandos: `npm run build` (compilación de producción), `npm run db:reset
 ```bash
 cd koolt-app
 npx vercel integration add neon   # aprovisiona Postgres y escribe DATABASE_URL
-npx vercel env pull .env.local
+npx vercel env pull .env
 npm run db:push && npm run db:seed   # crea el esquema y siembra la base remota
 npx vercel --prod
 ```
@@ -94,19 +115,19 @@ inventario, cierre y analítica.
 
 ## Módulos
 
-| Módulo | Proceso del alcance (§1.3) | Qué hace |
+| Módulo | Quién | Qué hace |
 |---|---|---|
-| **Venta** | 1 | Pantalla de cobro con pocos toques por venta. Mide el tiempo real de registro (OE2) y emite un comprobante interno con folio. |
-| **Cierre diario** | 2 | Consolidado generado por el sistema, con el contador de la máquina como control cruzado opcional. |
-| **Inventario** | 5, 6 | Existencias en tiempo real, alertas de punto de reorden, entradas, mermas, ajustes y conteo físico con desviación. |
-| **Compras** | 7 | Sugerencia calculada sobre el consumo real, agrupada por proveedor; órdenes con origen trazado y registro de recepción. |
-| **Analítica** | 8 | Venta diaria, franja horaria, mix por línea y adiciones más vendidas, con tabla equivalente y exportación a CSV. |
-| **Métricas del piloto** | §5.4 | Los diez indicadores del acta, medidos sobre el uso real de la aplicación. |
-| **Catálogo y recetas** | 3, 4 | Precios, mínimos y la receta que define el consumo de cada presentación. |
-| Selector de sesión | 9 | Dos roles: mostrador registra ventas; administrador ve todo lo demás. |
+| **Venta** | Equipo | Pantalla de cobro con pocos toques por venta. Mide el tiempo real de registro y emite un comprobante interno con folio. |
+| **Cierre diario** | Equipo | Consolidado generado por el sistema, con el contador de la máquina como control cruzado opcional. |
+| **Inventario** | Administración | Existencias en tiempo real, alertas de punto de reorden, entradas, mermas, ajustes y conteo físico con desviación. |
+| **Compras** | Administración | Sugerencia calculada sobre el consumo real, agrupada por proveedor; órdenes con origen trazado y registro de recepción. |
+| **Analítica** | Administración | Venta diaria, franja horaria, mix por línea y adiciones más vendidas, con tabla equivalente y exportación a CSV. |
+| **Indicadores** | Administración | Metas de operación (tiempo de registro, desviación de conteo, anticipación de alertas, agotamientos, compras sugeridas, capacitación) medidas sobre el uso real. |
+| **Catálogo y recetas** | Administración | Precios, mínimos y la receta que define el consumo de cada presentación. |
+| **Equipo** | Administración | Solicitudes de acceso, roles, capacitación y desactivación de cuentas. |
 
-Fuera del MVP, por decisión de alcance: facturación electrónica ante la DIAN,
-integración con datáfono, delivery, CRM, multi-sede y nómina.
+No incluye facturación electrónica ante la DIAN, integración con datáfono, delivery,
+CRM, multi-sede ni nómina.
 
 ---
 
@@ -129,7 +150,7 @@ Navegador  ──►  App Router (React, SSR)        src/app/**/page.tsx
 
 ```
 prisma/
-  schema.prisma          Modelo de datos (11 entidades)
+  schema.prisma          Modelo de datos (12 entidades)
   seed.ts                Catálogo + 21 días de histórico reconstruido
 src/
   dominio/               Reglas del negocio — sin React, sin HTTP
@@ -211,6 +232,14 @@ La primera versión usaba SQLite en archivo por comodidad, y no sobrevive a Verc
 sistema de archivos de una función serverless es de **solo lectura**, y aquí cada venta
 escribe en la base. Un archivo SQLite solo funciona si el proceso es de larga duración
 y dueño de su disco.
+
+### Zona horaria
+
+El día de operación se calcula en `America/Bogota`, no en la zona del servidor
+(`src/lib/formato.ts`). Vercel corre en UTC: sin esto, entre las 19:00 y la
+medianoche —horas pico de una heladería— las ventas se atribuirían al día
+siguiente y el cierre diario consolidaría el día equivocado. Colombia no aplica
+horario de verano, así que el desfase es fijo en −05:00.
 
 ### Calibración contra el diagnóstico
 
